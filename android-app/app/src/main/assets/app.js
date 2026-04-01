@@ -508,10 +508,15 @@ function renderClubCards() {
 }
 
 function populateFixtureFilter() {
+  const selectedRound = fixtureRoundFilter.value;
   fixtureRoundFilter.innerHTML = [
     '<option value="">Todas las fechas</option>',
     ...state.schedule.map((round) => `<option value="${round.fecha}">Fecha ${round.fecha}</option>`),
   ].join("");
+
+  if (selectedRound && state.schedule.some((round) => String(round.fecha) === selectedRound)) {
+    fixtureRoundFilter.value = selectedRound;
+  }
 }
 
 function getMatchResult(roundNumber, leg, homeId, awayId) {
@@ -571,6 +576,11 @@ function renderFixtures() {
   fixturesSummary.textContent =
     `${state.schedule.length} fechas base, ${state.schedule.length * 2} jornadas totales y ` +
     `${getScheduledMatchCount()} partidos programados.`;
+
+  if (!roundsToRender.length) {
+    fixturesGrid.innerHTML = emptyStateTemplate.innerHTML;
+    return;
+  }
 
   fixturesGrid.innerHTML = roundsToRender
     .map(
@@ -678,6 +688,8 @@ function renderPlayers() {
       `
     )
     .join("");
+
+  observeRevealTargets();
 }
 
 function renderLeaderboards() {

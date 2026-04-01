@@ -58,7 +58,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private static class LeagueWebViewClient extends WebViewClient {
+    private class LeagueWebViewClient extends WebViewClient {
         private final WebViewAssetLoader assetLoader;
         private boolean usingFallback;
 
@@ -113,6 +113,11 @@ public class MainActivity extends AppCompatActivity {
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
             usingFallback = LOCAL_URL.equals(url);
+            binding.splashOverlay.animate()
+                    .alpha(0f)
+                    .setDuration(220)
+                    .withEndAction(() -> binding.splashOverlay.setVisibility(android.view.View.GONE))
+                    .start();
         }
     }
 }
