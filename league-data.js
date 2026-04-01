@@ -4,11 +4,20 @@ window.LEAGUE_DATA = {
                  "shortName":  "SCC",
                  "admin":  "SLYINTHEBLOCK",
                  "season":  "Season 01",
-                 "updatedAt":  "2026-03-31",
+                 "updatedAt":  "2026-04-01",
                  "region":  "Global",
                  "game":  "EA SPORTS FC 26",
                  "mode":  "Clubs Pro Virtual",
                  "format":  "Liga internacional",
+                 "scheduleWindow":  {
+                                        "start":  "18:00",
+                                        "end":  "23:30",
+                                        "zones":  [
+                                                      "Argentina",
+                                                      "Chile",
+                                                      "Uruguay"
+                                                  ]
+                                    },
                  "countries":  [
                                    "Argentina",
                                    "Chile",
@@ -310,7 +319,7 @@ window.LEAGUE_DATA = {
                   },
                   {
                       "id":  "club-antigordas",
-                      "name":  "ANTIGÃ˜RDAS",
+                      "name":  "ANTIGORDAS",
                       "country":  "Argentina",
                       "contact":  "+54 9 221 360-1555",
                       "stadium":  "Por definir",

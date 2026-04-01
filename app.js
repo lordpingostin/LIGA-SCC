@@ -19,6 +19,8 @@ const leaderboards = document.getElementById("leaderboards");
 const fixturesGrid = document.getElementById("fixturesGrid");
 const fixtureRoundFilter = document.getElementById("fixtureRoundFilter");
 const fixturesSummary = document.getElementById("fixturesSummary");
+const scheduleWindowTitle = document.getElementById("scheduleWindowTitle");
+const scheduleWindowText = document.getElementById("scheduleWindowText");
 const clubCards = document.getElementById("clubCards");
 const playersTableBody = document.getElementById("playersTableBody");
 const playerSearch = document.getElementById("playerSearch");
@@ -133,6 +135,25 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   }).format(parsed);
+}
+
+function getScheduleWindowInfo() {
+  const scheduleWindow = state.meta.scheduleWindow || {};
+  const start = String(scheduleWindow.start || "18:00");
+  const end = String(scheduleWindow.end || "23:30");
+  const zones = Array.isArray(scheduleWindow.zones) && scheduleWindow.zones.length
+    ? scheduleWindow.zones
+    : ["Argentina", "Chile", "Uruguay"];
+
+  return {
+    start,
+    end,
+    zones,
+    zoneLabel: zones.join(", "),
+    shortLabel: `${start} a ${end}`,
+    title: `Rango oficial de inicio: ${start} a ${end}`,
+    text: `Partidos habilitados entre ${start} y ${end} para ${zones.join(", ")}.`,
+  };
 }
 
 function normalizeClub(club = {}) {
@@ -319,6 +340,7 @@ function renderMeta() {
   const region = state.meta.region || "Global";
   const game = state.meta.game || "EA SPORTS FC 26";
   const mode = state.meta.mode || "Clubs Pro";
+  const scheduleWindow = getScheduleWindowInfo();
 
   brandName.textContent = leagueName;
   brandRegion.textContent = `${region} - ${game}`;
@@ -343,6 +365,8 @@ function renderMeta() {
   formatLabel.textContent = state.meta.format || "Liga internacional";
   gameLabel.textContent = game;
   modeLabel.textContent = mode;
+  scheduleWindowTitle.textContent = scheduleWindow.title;
+  scheduleWindowText.textContent = scheduleWindow.text;
 
   footerBrand.textContent = leagueName;
   footerRegion.textContent = `${region} - ${mode} - ${game}`;
@@ -380,10 +404,12 @@ function renderSummary() {
 }
 
 function renderCommandCenter() {
+  const scheduleWindow = getScheduleWindowInfo();
   const items = [
     { label: "Cobertura", value: `${getCountryCount()} paises listados` },
     { label: "Temporada", value: state.meta.season || "Season 01" },
     { label: "Calendario", value: `${state.schedule.length} fechas ida y ${state.schedule.length} vuelta` },
+    { label: "Horario oficial", value: `${scheduleWindow.shortLabel} (${scheduleWindow.zoneLabel})` },
     { label: "Fuente", value: state.sourceLabel },
   ];
 
@@ -568,6 +594,7 @@ function renderFixtures() {
     return;
   }
 
+  const scheduleWindow = getScheduleWindowInfo();
   const selectedRound = numberValue(fixtureRoundFilter.value);
   const roundsToRender = selectedRound
     ? state.schedule.filter((round) => round.fecha === selectedRound)
@@ -575,7 +602,7 @@ function renderFixtures() {
 
   fixturesSummary.textContent =
     `${state.schedule.length} fechas base, ${state.schedule.length * 2} jornadas totales y ` +
-    `${getScheduledMatchCount()} partidos programados.`;
+    `${getScheduledMatchCount()} partidos programados. Horario oficial: ${scheduleWindow.shortLabel} (${scheduleWindow.zoneLabel}).`;
 
   if (!roundsToRender.length) {
     fixturesGrid.innerHTML = emptyStateTemplate.innerHTML;
