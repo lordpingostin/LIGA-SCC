@@ -612,6 +612,8 @@ function renderFixtures() {
       `
     )
     .join("");
+
+  observeRevealTargets();
 }
 function populatePlayerFilters() {
   const selectedClub = playerClubFilter.value;
