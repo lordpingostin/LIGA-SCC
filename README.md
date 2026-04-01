@@ -171,3 +171,50 @@ Importante:
 
 - Con el hosting actual en `https://lordpingostin.github.io/LIGA-SCC/`, Chrome abrira la web como Custom Tab, porque la verificacion TWA completa necesita `/.well-known/assetlinks.json` en la raiz del dominio.
 - Para full screen real sin barra, lo ideal es mover la web a Firebase Hosting o a un dominio propio apuntando a esta carpeta.
+
+## Firebase Hosting
+
+La carpeta ya quedo preparada para desplegarse en Firebase Hosting con:
+
+- `firebase.json`
+- `.firebaserc.example`
+- `/.well-known/assetlinks.json`
+
+### Flujo corto
+
+1. Inicia sesion:
+
+   `firebase login`
+
+2. Conecta el proyecto:
+
+   `firebase use --add`
+
+3. Despliega:
+
+   `firebase deploy --only hosting`
+
+### Si no tienes `.firebaserc`
+
+Duplica `.firebaserc.example` como `.firebaserc` y cambia:
+
+`tu-project-id-de-firebase`
+
+por tu `projectId` real.
+
+### Importante para la TWA
+
+Cuando ya tengas tu dominio de Firebase, por ejemplo:
+
+`https://tu-proyecto.web.app`
+
+o
+
+`https://tu-proyecto.firebaseapp.com`
+
+hay que actualizar despues:
+
+- `android-app/app/src/main/AndroidManifest.xml`
+- `android-app/app/src/main/res/values/strings.xml`
+
+para que la app apunte a ese dominio y no a GitHub Pages.

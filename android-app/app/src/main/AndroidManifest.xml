@@ -24,7 +24,7 @@
 
             <meta-data
                 android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="https://lordpingostin.github.io/LIGA-SCC/" />
+                android:value="https://liga-scc.web.app/" />
 
             <meta-data
                 android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
@@ -40,8 +40,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
-                    android:host="lordpingostin.github.io"
-                    android:pathPrefix="/LIGA-SCC"
+                    android:host="liga-scc.web.app"
                     android:scheme="https" />
             </intent-filter>
         </activity>
