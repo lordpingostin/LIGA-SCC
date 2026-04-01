@@ -312,6 +312,10 @@ select {
   font-weight: 800;
 }
 
+.hidden {
+  display: none !important;
+}
+
 .primary-btn {
   color: #03150a;
   background: linear-gradient(135deg, var(--accent), #d6ff92);
@@ -513,6 +517,8 @@ select {
 }
 
 .command-panel,
+.access-panel,
+.editor-panel,
 .moderator-panel,
 .table-panel,
 .leader-panel,
@@ -583,6 +589,147 @@ select {
 
 .command-list strong {
   font-size: 1.02rem;
+}
+
+.topbar-btn {
+  min-height: 46px;
+}
+
+.access-grid,
+.editor-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.access-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 18px;
+}
+
+.access-card,
+.editor-form {
+  padding: 18px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.access-card strong {
+  display: block;
+  margin: 4px 0 8px;
+  font-size: 1.04rem;
+}
+
+.panel-copy {
+  margin: 0;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.access-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.access-badge.neutral {
+  color: #d9e5ff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.access-badge.success {
+  color: #bbffdb;
+  background: rgba(119, 242, 173, 0.12);
+}
+
+.access-badge.warning {
+  color: #ffd7a8;
+  background: rgba(255, 180, 79, 0.14);
+}
+
+.editor-panel {
+  margin-top: 24px;
+}
+
+.editor-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.editor-form {
+  display: grid;
+  gap: 12px;
+}
+
+.editor-form-head h4 {
+  margin: 0 0 6px;
+  font-size: 1.18rem;
+}
+
+.editor-form-head p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.editor-form label,
+.filter-control {
+  display: grid;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.editor-form input,
+.editor-form select,
+.filter-control input,
+.filter-control select {
+  width: 100%;
+  min-height: 50px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0 14px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+  outline: none;
+}
+
+.editor-form input:focus,
+.editor-form select:focus,
+.filter-control input:focus,
+.filter-control select:focus {
+  border-color: rgba(119, 242, 173, 0.48);
+  box-shadow: 0 0 0 4px rgba(119, 242, 173, 0.12);
+}
+
+.editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.save-status {
+  margin: 0;
+  color: var(--muted);
+}
+
+.save-status.pending {
+  color: #ffd7a8;
+}
+
+.save-status.success {
+  color: #bbffdb;
+}
+
+.save-status.warning,
+.save-status.error {
+  color: #ffb6b6;
 }
 
 .moderator-form {
@@ -1032,6 +1179,8 @@ tbody tr:hover {
 @media (max-width: 1120px) {
   .hero-content,
   .admin-layout,
+  .access-grid,
+  .editor-grid,
   .competition-layout,
   .global-layout,
   .fixture-columns {
@@ -1061,6 +1210,7 @@ tbody tr:hover {
   .topbar,
   .inline-heading,
   .moderator-item,
+  .editor-actions,
   .fixture-column-head {
     flex-direction: column;
     align-items: start;
@@ -1095,6 +1245,11 @@ tbody tr:hover {
   }
 
   .moderator-form {
+    grid-template-columns: 1fr;
+  }
+
+  .access-grid,
+  .editor-grid {
     grid-template-columns: 1fr;
   }
 

@@ -28,7 +28,8 @@
 
       <div class="topbar-actions">
         <span id="seasonBadge" class="status-chip">Season 01</span>
-        <span class="status-chip">Admin: <strong id="adminBadge">SLYINTHEBLOCK</strong></span>
+        <button id="signInButton" class="secondary-btn topbar-btn" type="button">Entrar con Google</button>
+        <button id="signOutButton" class="secondary-btn topbar-btn hidden" type="button">Cerrar sesion</button>
       </div>
     </nav>
 
@@ -37,8 +38,8 @@
         <p class="eyebrow">FC26 virtual league</p>
         <h1 id="heroTitle">La sede oficial del torneo SCC.</h1>
         <p class="hero-text" id="heroDescription">
-          Organiza tu liga internacional, publica resultados, controla moderadores y comparte
-          estadisticas de clubes y jugadores desde una sola pagina.
+          Organiza tu liga internacional, comparte resultados y permite edicion colaborativa con acceso
+          controlado por Google.
         </p>
 
         <div class="hero-badges" id="heroBadges">
@@ -48,7 +49,7 @@
         </div>
 
         <div class="hero-actions">
-          <a class="primary-btn" href="#panel-admin">Administrar torneo</a>
+          <a class="primary-btn" href="#panel-control">Centro de control</a>
           <a class="secondary-btn" href="#partidos">Ver calendario</a>
         </div>
       </div>
@@ -74,8 +75,8 @@
               <strong id="heroPlayerCount">0</strong>
             </article>
             <article>
-              <span>Moderadores</span>
-              <strong id="heroModeratorCount">0</strong>
+              <span>Jugados</span>
+              <strong id="heroMatchCount">0</strong>
             </article>
             <article>
               <span>Paises</span>
@@ -95,13 +96,13 @@
   <main class="app-shell">
     <section class="summary-band" id="summaryGrid" data-reveal></section>
 
-    <section class="section-block admin-block" id="panel-admin">
+    <section class="section-block admin-block" id="panel-control">
       <div class="section-intro" data-reveal>
-        <p class="eyebrow">Centro de mando</p>
-        <h2>Administra la liga SCC sin salir de la portada.</h2>
+        <p class="eyebrow">Centro de control</p>
+        <h2>Acceso con Google y edicion colaborativa.</h2>
         <p>
-          Tu perfil de admin, el staff de moderacion y la configuracion del torneo quedan visibles
-          para jugadores de cualquier pais.
+          El publico solo ve la liga. Los usuarios autorizados pueden entrar con Google y editar
+          tabla y estadisticas desde un panel protegido.
         </p>
       </div>
 
@@ -134,47 +135,163 @@
           <div class="command-list" id="commandList"></div>
         </article>
 
-        <article class="moderator-panel" data-reveal>
+        <article class="access-panel" data-reveal>
           <div class="panel-heading">
-            <p class="section-tag">Moderadores</p>
-            <h3>Agrega staff para apoyar el torneo</h3>
+            <p class="section-tag">Acceso</p>
+            <h3>Login con Google</h3>
           </div>
 
-          <form id="moderatorForm" class="moderator-form">
-            <label>
-              Nombre o tag
-              <input id="moderatorName" name="name" type="text" placeholder="Ej: Assen" required>
-            </label>
+          <div class="access-grid">
+            <div class="access-card">
+              <span class="profile-label">Estado</span>
+              <strong id="authStatus">Modo publico</strong>
+              <p id="authHelp" class="panel-copy">
+                Si configuras Firebase, podras iniciar sesion con Google y habilitar edicion para otros correos.
+              </p>
+            </div>
 
-            <label>
-              Pais
-              <input id="moderatorCountry" name="country" type="text" placeholder="Ej: Colombia" required>
-            </label>
+            <div class="access-card">
+              <span class="profile-label">Usuario actual</span>
+              <strong id="authUser">No has iniciado sesion</strong>
+              <p id="editorBadge" class="access-badge neutral">Sin permisos de edicion</p>
+            </div>
 
-            <label>
-              Rol
-              <input id="moderatorRole" name="role" type="text" placeholder="Ej: Control de resultados" required>
-            </label>
+            <div class="access-card">
+              <span class="profile-label">Fuente de datos</span>
+              <strong id="dataSourceLabel">JSON publico</strong>
+              <p id="configStatus" class="panel-copy">La web funciona aunque Firebase no este configurado.</p>
+            </div>
 
-            <label>
-              Estado
-              <select id="moderatorStatus" name="status">
-                <option value="Activo">Activo</option>
-                <option value="Standby">Standby</option>
-              </select>
-            </label>
-
-            <button class="primary-btn form-btn" type="submit">Guardar moderador</button>
-          </form>
-
-          <div class="moderator-meta">
-            <span>Total staff: <strong id="moderatorCount">0</strong></span>
-            <span>Guardado en este navegador</span>
+            <div class="access-card">
+              <span class="profile-label">Editores autorizados</span>
+              <strong id="editorCountLabel">0 correos</strong>
+              <p class="panel-copy">La lista de acceso se define en la configuracion de Firebase y en las reglas de Firestore.</p>
+            </div>
           </div>
-
-          <div class="moderator-list" id="moderatorsList"></div>
         </article>
       </div>
+
+      <article class="editor-panel hidden" id="editorPanel" data-reveal>
+        <div class="panel-heading inline-heading">
+          <div>
+            <p class="section-tag">Panel de edicion</p>
+            <h3>Edita la liga desde la web</h3>
+          </div>
+          <p class="panel-note" id="editorPanelNote">
+            Los cambios se guardan en la nube para que la web y la app Android los lean automaticamente.
+          </p>
+        </div>
+
+        <div class="editor-grid">
+          <form id="clubEditorForm" class="editor-form">
+            <div class="editor-form-head">
+              <h4>Editar club</h4>
+              <p>Actualiza la tabla oficial del equipo seleccionado.</p>
+            </div>
+
+            <label>
+              Club
+              <select id="clubEditorSelect" required></select>
+            </label>
+
+            <label>
+              PJ
+              <input id="clubPlayedInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              G
+              <input id="clubWinsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              E
+              <input id="clubDrawsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              P
+              <input id="clubLossesInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              GF
+              <input id="clubGoalsForInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              GC
+              <input id="clubGoalsAgainstInput" type="number" min="0" required>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar club</button>
+          </form>
+
+          <form id="playerEditorForm" class="editor-form">
+            <div class="editor-form-head">
+              <h4>Editar jugador</h4>
+              <p>Actualiza estadisticas individuales y atajadas de portero.</p>
+            </div>
+
+            <label>
+              Jugador
+              <select id="playerEditorSelect" required></select>
+            </label>
+
+            <label>
+              Posicion
+              <input id="playerPositionInput" type="text" required>
+            </label>
+
+            <label>
+              OVR
+              <input id="playerOverallInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              PJ
+              <input id="playerMatchesInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Goles
+              <input id="playerGoalsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Asistencias
+              <input id="playerAssistsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              MVP
+              <input id="playerMvpsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Porterias a cero
+              <input id="playerCleanSheetsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Atajadas
+              <input id="playerSavesInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Nota
+              <input id="playerRatingInput" type="number" min="0" step="0.1" required>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar jugador</button>
+          </form>
+        </div>
+
+        <div class="editor-actions">
+          <button id="downloadJsonButton" class="secondary-btn" type="button">Descargar respaldo JSON</button>
+          <p id="saveStatus" class="save-status">Sin cambios pendientes.</p>
+        </div>
+      </article>
     </section>
 
     <section class="section-block competition-block">
@@ -194,8 +311,6 @@
                 <tr>
                   <th>#</th>
                   <th>Club</th>
-                  <th>Pais</th>
-                  <th>Contacto</th>
                   <th>PJ</th>
                   <th>G</th>
                   <th>E</th>
@@ -261,7 +376,7 @@
       <div class="panel-heading inline-heading" data-reveal>
         <div>
           <p class="section-tag">Jugadores</p>
-          <h3>Estadisticas individuales y filtro rapido</h3>
+          <h3>Estadisticas individuales y atajadas de portero</h3>
         </div>
         <p class="panel-note">
           Busca por nombre y filtra por club o posicion para revisar el rendimiento completo.
@@ -303,6 +418,7 @@
               <th>A</th>
               <th>MVP</th>
               <th>CS</th>
+              <th>ATAJ</th>
               <th>Nota</th>
             </tr>
           </thead>
@@ -348,7 +464,8 @@
     </div>
   </template>
 
+  <script src="firebase-config.js"></script>
   <script src="league-data.js"></script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

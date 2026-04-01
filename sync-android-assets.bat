@@ -11,6 +11,8 @@ if not exist "%ASSETS%" (
 copy /Y "%ROOT%index.html" "%ASSETS%\index.html" >nul
 copy /Y "%ROOT%styles.css" "%ASSETS%\styles.css" >nul
 copy /Y "%ROOT%app.js" "%ASSETS%\app.js" >nul
+copy /Y "%ROOT%firebase-config.js" "%ASSETS%\firebase-config.js" >nul
+copy /Y "%ROOT%firebase-service.js" "%ASSETS%\firebase-service.js" >nul
 copy /Y "%ROOT%league-data.json" "%ASSETS%\league-data.json" >nul
 copy /Y "%ROOT%league-data.js" "%ASSETS%\league-data.js" >nul
 

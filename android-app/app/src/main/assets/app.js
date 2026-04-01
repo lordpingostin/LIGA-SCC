@@ -1,30 +1,30 @@
+﻿import {
+  getFirebaseSetup,
+  initFirebase,
+  isEditor,
+  saveLeagueData,
+  signInWithGoogle,
+  signOutUser,
+} from "./firebase-service.js";
+
 const DATA_PATH = "league-data.json";
-const STORAGE_KEY = "scc-custom-moderators";
 const FIXED_ADMIN = "SLYINTHEBLOCK";
 
-const state = {
-  meta: {},
-  moderators: [],
-  customModerators: [],
-  clubs: [],
-  players: [],
-  schedule: [],
-  matches: [],
-};
-
+const emptyStateTemplate = document.getElementById("emptyStateTemplate");
 const summaryGrid = document.getElementById("summaryGrid");
-const clubStandingsBody = document.getElementById("clubStandingsBody");
-const clubCards = document.getElementById("clubCards");
-const playersTableBody = document.getElementById("playersTableBody");
-const leaderboards = document.getElementById("leaderboards");
-const moderatorsList = document.getElementById("moderatorsList");
-const moderatorForm = document.getElementById("moderatorForm");
-const moderatorCount = document.getElementById("moderatorCount");
 const commandList = document.getElementById("commandList");
 const spotlightList = document.getElementById("spotlightList");
-const emptyStateTemplate = document.getElementById("emptyStateTemplate");
+const clubStandingsBody = document.getElementById("clubStandingsBody");
+const leaderboards = document.getElementById("leaderboards");
+const fixturesGrid = document.getElementById("fixturesGrid");
+const fixtureRoundFilter = document.getElementById("fixtureRoundFilter");
+const fixturesSummary = document.getElementById("fixturesSummary");
+const clubCards = document.getElementById("clubCards");
+const playersTableBody = document.getElementById("playersTableBody");
+const playerSearch = document.getElementById("playerSearch");
+const playerClubFilter = document.getElementById("playerClubFilter");
+const playerPositionFilter = document.getElementById("playerPositionFilter");
 const seasonBadge = document.getElementById("seasonBadge");
-const adminBadge = document.getElementById("adminBadge");
 const brandName = document.getElementById("brandName");
 const brandRegion = document.getElementById("brandRegion");
 const heroTitle = document.getElementById("heroTitle");
@@ -34,54 +34,215 @@ const adminName = document.getElementById("adminName");
 const heroAdmin = document.getElementById("heroAdmin");
 const heroClubCount = document.getElementById("heroClubCount");
 const heroPlayerCount = document.getElementById("heroPlayerCount");
-const heroModeratorCount = document.getElementById("heroModeratorCount");
+const heroMatchCount = document.getElementById("heroMatchCount");
 const heroCountryCount = document.getElementById("heroCountryCount");
 const updatedAt = document.getElementById("updatedAt");
-const footerBrand = document.getElementById("footerBrand");
-const footerRegion = document.getElementById("footerRegion");
-const footerUpdate = document.getElementById("footerUpdate");
 const formatLabel = document.getElementById("formatLabel");
 const gameLabel = document.getElementById("gameLabel");
 const modeLabel = document.getElementById("modeLabel");
 const globalSummary = document.getElementById("globalSummary");
-const playerSearch = document.getElementById("playerSearch");
-const playerClubFilter = document.getElementById("playerClubFilter");
-const playerPositionFilter = document.getElementById("playerPositionFilter");
-const fixturesSummary = document.getElementById("fixturesSummary");
-const fixtureRoundFilter = document.getElementById("fixtureRoundFilter");
-const fixturesGrid = document.getElementById("fixturesGrid");
+const footerBrand = document.getElementById("footerBrand");
+const footerRegion = document.getElementById("footerRegion");
+const footerUpdate = document.getElementById("footerUpdate");
+const signInButton = document.getElementById("signInButton");
+const signOutButton = document.getElementById("signOutButton");
+const authStatus = document.getElementById("authStatus");
+const authHelp = document.getElementById("authHelp");
+const authUser = document.getElementById("authUser");
+const editorBadge = document.getElementById("editorBadge");
+const dataSourceLabel = document.getElementById("dataSourceLabel");
+const configStatus = document.getElementById("configStatus");
+const editorCountLabel = document.getElementById("editorCountLabel");
+const editorPanel = document.getElementById("editorPanel");
+const editorPanelNote = document.getElementById("editorPanelNote");
+const clubEditorForm = document.getElementById("clubEditorForm");
+const clubEditorSelect = document.getElementById("clubEditorSelect");
+const clubPlayedInput = document.getElementById("clubPlayedInput");
+const clubWinsInput = document.getElementById("clubWinsInput");
+const clubDrawsInput = document.getElementById("clubDrawsInput");
+const clubLossesInput = document.getElementById("clubLossesInput");
+const clubGoalsForInput = document.getElementById("clubGoalsForInput");
+const clubGoalsAgainstInput = document.getElementById("clubGoalsAgainstInput");
+const playerEditorForm = document.getElementById("playerEditorForm");
+const playerEditorSelect = document.getElementById("playerEditorSelect");
+const playerPositionInput = document.getElementById("playerPositionInput");
+const playerOverallInput = document.getElementById("playerOverallInput");
+const playerMatchesInput = document.getElementById("playerMatchesInput");
+const playerGoalsInput = document.getElementById("playerGoalsInput");
+const playerAssistsInput = document.getElementById("playerAssistsInput");
+const playerMvpsInput = document.getElementById("playerMvpsInput");
+const playerCleanSheetsInput = document.getElementById("playerCleanSheetsInput");
+const playerSavesInput = document.getElementById("playerSavesInput");
+const playerRatingInput = document.getElementById("playerRatingInput");
+const downloadJsonButton = document.getElementById("downloadJsonButton");
+const saveStatus = document.getElementById("saveStatus");
+
+const state = {
+  rawData: null,
+  meta: {},
+  clubs: [],
+  players: [],
+  matches: [],
+  schedule: [],
+  user: null,
+  canEdit: false,
+  sourceLabel: "JSON publico",
+  firebaseStatus: "disabled",
+  firebaseSetup: getFirebaseSetup(),
+  revealObserver: null,
+};
+
+function deepClone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function numberValue(value, fallback = 0) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function todayIsoLocal() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  const day = `${now.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDate(value) {
+  if (!value) {
+    return "Pendiente";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("es-CO", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function normalizeClub(club = {}) {
+  return {
+    ...club,
+    played: numberValue(club.played),
+    wins: numberValue(club.wins),
+    draws: numberValue(club.draws),
+    losses: numberValue(club.losses),
+    goalsFor: numberValue(club.goalsFor),
+    goalsAgainst: numberValue(club.goalsAgainst),
+  };
+}
+
+function normalizePlayer(player = {}) {
+  return {
+    ...player,
+    position: player.position || "POR DEFINIR",
+    overall: numberValue(player.overall),
+    matches: numberValue(player.matches),
+    goals: numberValue(player.goals),
+    assists: numberValue(player.assists),
+    mvps: numberValue(player.mvps),
+    cleanSheets: numberValue(player.cleanSheets),
+    saves: numberValue(player.saves),
+    rating: numberValue(player.rating),
+  };
+}
+
+function normalizeLeagueData(data = {}) {
+  const normalized = deepClone(data || {});
+
+  normalized.meta = {
+    leagueName: "SCC FC26 Virtual League",
+    shortName: "SCC",
+    admin: FIXED_ADMIN,
+    season: "Season 01",
+    updatedAt: todayIsoLocal(),
+    region: "Global",
+    game: "EA SPORTS FC 26",
+    mode: "Clubs Pro",
+    format: "Liga internacional",
+    countries: [],
+    ...(normalized.meta || {}),
+    admin: FIXED_ADMIN,
+  };
+
+  normalized.moderators = Array.isArray(normalized.moderators) ? normalized.moderators : [];
+  normalized.clubs = Array.isArray(normalized.clubs) ? normalized.clubs.map(normalizeClub) : [];
+  normalized.players = Array.isArray(normalized.players) ? normalized.players.map(normalizePlayer) : [];
+  normalized.matches = Array.isArray(normalized.matches) ? normalized.matches : [];
+
+  return normalized;
+}
+
+function buildLeagueDataForSave() {
+  return {
+    ...(state.rawData || {}),
+    meta: {
+      ...(state.meta || {}),
+      admin: FIXED_ADMIN,
+      updatedAt: todayIsoLocal(),
+    },
+    clubs: state.clubs.map((club) => ({ ...club })),
+    players: state.players.map((player) => ({ ...player })),
+    matches: state.matches.map((match) => ({ ...match })),
+  };
+}
+
+function applyLeagueData(data, options = {}) {
+  const normalized = normalizeLeagueData(data);
+  state.rawData = normalized;
+  state.meta = normalized.meta;
+  state.clubs = normalized.clubs;
+  state.players = normalized.players;
+  state.matches = normalized.matches;
+  state.schedule = generateRoundRobinSchedule(state.clubs);
+
+  if (options.sourceLabel) {
+    state.sourceLabel = options.sourceLabel;
+  }
+}
 
 function pointsFor(club) {
-  return Number(club.wins || 0) * 3 + Number(club.draws || 0);
+  return numberValue(club.wins) * 3 + numberValue(club.draws);
 }
 
 function goalDifference(club) {
-  return Number(club.goalsFor || 0) - Number(club.goalsAgainst || 0);
+  return numberValue(club.goalsFor) - numberValue(club.goalsAgainst);
 }
 
 function sortClubs(clubs) {
   return [...clubs].sort((a, b) =>
     pointsFor(b) - pointsFor(a) ||
     goalDifference(b) - goalDifference(a) ||
-    Number(b.goalsFor || 0) - Number(a.goalsFor || 0) ||
-    a.name.localeCompare(b.name)
+    numberValue(b.goalsFor) - numberValue(a.goalsFor) ||
+    String(a.name || "").localeCompare(String(b.name || ""))
   );
 }
 
 function sortPlayers(players, field) {
   return [...players].sort((a, b) =>
-    Number(b[field] || 0) - Number(a[field] || 0) ||
-    Number(b.rating || 0) - Number(a.rating || 0) ||
-    a.name.localeCompare(b.name)
+    numberValue(b[field]) - numberValue(a[field]) ||
+    numberValue(b.rating) - numberValue(a.rating) ||
+    String(a.name || "").localeCompare(String(b.name || ""))
   );
 }
 
-function getAllModerators() {
-  return [...state.moderators, ...state.customModerators];
-}
-
 function getClubById(clubId) {
-  return state.clubs.find((club) => club.id === clubId);
+  return state.clubs.find((club) => club.id === clubId) || null;
 }
 
 function getClubName(clubId) {
@@ -93,13 +254,7 @@ function getCountryCount() {
   (state.meta.countries || []).forEach((country) => countries.add(country));
   state.clubs.forEach((club) => club.country && countries.add(club.country));
   state.players.forEach((player) => player.country && countries.add(player.country));
-  getAllModerators().forEach((moderator) => moderator.country && countries.add(moderator.country));
   return countries.size;
-}
-
-function getMatchCount() {
-  const totalPlayed = state.clubs.reduce((sum, club) => sum + Number(club.played || 0), 0);
-  return Math.round(totalPlayed / 2);
 }
 
 function getScheduledMatchCount() {
@@ -108,38 +263,6 @@ function getScheduledMatchCount() {
 
 function getCompletedMatchCount() {
   return state.matches.filter((match) => String(match.status || "").toLowerCase() === "final").length;
-}
-
-function formatDate(value) {
-  if (!value) {
-    return "Pendiente";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat("es-CO", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
-function loadCustomModerators() {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn("No se pudo leer el staff guardado localmente.", error);
-    return [];
-  }
-}
-
-function saveCustomModerators() {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state.customModerators));
 }
 
 function createEmptyRow(colspan) {
@@ -158,9 +281,8 @@ function generateRoundRobinSchedule(clubs) {
 
   const rotation = [...teams];
   const rounds = [];
-  const totalRounds = rotation.length - 1;
 
-  for (let roundIndex = 0; roundIndex < totalRounds; roundIndex += 1) {
+  for (let roundIndex = 0; roundIndex < rotation.length - 1; roundIndex += 1) {
     const matches = [];
 
     for (let index = 0; index < rotation.length / 2; index += 1) {
@@ -171,10 +293,10 @@ function generateRoundRobinSchedule(clubs) {
         continue;
       }
 
-      const shouldFlip = roundIndex % 2 === 1;
+      const flip = roundIndex % 2 === 1;
       matches.push({
-        homeId: shouldFlip ? second.id : first.id,
-        awayId: shouldFlip ? first.id : second.id,
+        homeId: flip ? second.id : first.id,
+        awayId: flip ? first.id : second.id,
       });
     }
 
@@ -192,72 +314,65 @@ function generateRoundRobinSchedule(clubs) {
 
   return rounds;
 }
-
 function renderMeta() {
   const leagueName = state.meta.leagueName || "SCC FC26 Virtual League";
-  const admin = FIXED_ADMIN;
   const region = state.meta.region || "Global";
+  const game = state.meta.game || "EA SPORTS FC 26";
+  const mode = state.meta.mode || "Clubs Pro";
 
   brandName.textContent = leagueName;
-  brandRegion.textContent = `${region} - ${state.meta.game || "FC26"}`;
+  brandRegion.textContent = `${region} - ${game}`;
   seasonBadge.textContent = state.meta.season || "Season 01";
-  adminBadge.textContent = admin;
+
   heroTitle.textContent = `${leagueName} para competir desde cualquier pais.`;
   heroDescription.textContent =
-    `${state.meta.format || "Liga internacional"} de ${state.meta.game || "EA SPORTS FC 26"} en ` +
-    `${state.meta.mode || "Clubs Pro"} con control centralizado de staff, clubes, partidos y estadisticas.`;
-  heroBadges.innerHTML = [region, state.meta.game || "FC26", state.meta.mode || "Clubs Pro"]
-    .map((label) => `<span class="signal-pill">${label}</span>`)
+    `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con estadisticas, ` +
+    "resultados y edicion colaborativa con Google.";
+  heroBadges.innerHTML = [region, game, mode]
+    .map((label) => `<span class="signal-pill">${escapeHtml(label)}</span>`)
     .join("");
 
-  adminName.textContent = admin;
-  heroAdmin.textContent = admin;
-  heroClubCount.textContent = state.clubs.length;
-  heroPlayerCount.textContent = state.players.length;
-  heroModeratorCount.textContent = getAllModerators().length;
-  heroCountryCount.textContent = getCountryCount();
+  adminName.textContent = FIXED_ADMIN;
+  heroAdmin.textContent = FIXED_ADMIN;
+  heroClubCount.textContent = `${state.clubs.length}`;
+  heroPlayerCount.textContent = `${state.players.length}`;
+  heroMatchCount.textContent = `${getCompletedMatchCount()}`;
+  heroCountryCount.textContent = `${getCountryCount()}`;
   updatedAt.textContent = formatDate(state.meta.updatedAt);
 
   formatLabel.textContent = state.meta.format || "Liga internacional";
-  gameLabel.textContent = state.meta.game || "EA SPORTS FC 26";
-  modeLabel.textContent = state.meta.mode || "Clubs Pro";
+  gameLabel.textContent = game;
+  modeLabel.textContent = mode;
 
   footerBrand.textContent = leagueName;
-  footerRegion.textContent = `${region} - ${state.meta.mode || "Clubs Pro"} - ${state.meta.game || "FC26"}`;
+  footerRegion.textContent = `${region} - ${mode} - ${game}`;
   footerUpdate.textContent = `Ultima actualizacion: ${formatDate(state.meta.updatedAt)}`;
-
-  globalSummary.textContent =
-    `${leagueName} reune ${state.clubs.length} clubes, ${state.players.length} jugadores, ` +
-    `${getAllModerators().length} miembros de staff, ${getScheduledMatchCount()} partidos programados ` +
-    `y ${getCompletedMatchCount()} ya jugados.`;
-
-  if (fixturesSummary) {
-    fixturesSummary.textContent =
-      `${state.schedule.length} fechas base, ${state.schedule.length * 2} jornadas totales y ` +
-      `${getScheduledMatchCount()} partidos programados automaticamente.`;
-  }
 }
 
 function renderSummary() {
   const leaderClub = sortClubs(state.clubs)[0];
   const topScorer = sortPlayers(state.players, "goals")[0];
+
   const cards = [
     { label: "Clubes inscritos", value: state.clubs.length },
     { label: "Jugadores registrados", value: state.players.length },
     { label: "Fechas base", value: state.schedule.length },
     { label: "Partidos programados", value: getScheduledMatchCount() },
-    { label: "Partidos jugados", value: getCompletedMatchCount() || getMatchCount() },
+    { label: "Partidos jugados", value: getCompletedMatchCount() },
     { label: "Paises activos", value: getCountryCount() },
     { label: "Lider actual", value: leaderClub ? leaderClub.name : "Sin datos" },
-    { label: "Maximo goleador", value: topScorer ? `${topScorer.name} - ${topScorer.goals}` : "Sin datos" },
+    {
+      label: "Maximo goleador",
+      value: topScorer ? `${topScorer.name} - ${numberValue(topScorer.goals)}` : "Sin datos",
+    },
   ];
 
   summaryGrid.innerHTML = cards
     .map(
       (card) => `
         <article class="summary-card">
-          <span>${card.label}</span>
-          <strong>${card.value}</strong>
+          <span>${escapeHtml(card.label)}</span>
+          <strong>${escapeHtml(card.value)}</strong>
         </article>
       `
     )
@@ -266,30 +381,18 @@ function renderSummary() {
 
 function renderCommandCenter() {
   const items = [
-    {
-      label: "Cobertura",
-      value: `${getCountryCount()} paises listados`,
-    },
-    {
-      label: "Temporada",
-      value: state.meta.season || "Season 01",
-    },
-    {
-      label: "Calendario",
-      value: `${state.schedule.length} fechas ida y ${state.schedule.length} vuelta`,
-    },
-    {
-      label: "Publicacion",
-      value: "Lista para abrir local o desplegar en web",
-    },
+    { label: "Cobertura", value: `${getCountryCount()} paises listados` },
+    { label: "Temporada", value: state.meta.season || "Season 01" },
+    { label: "Calendario", value: `${state.schedule.length} fechas ida y ${state.schedule.length} vuelta` },
+    { label: "Fuente", value: state.sourceLabel },
   ];
 
   commandList.innerHTML = items
     .map(
       (item) => `
         <article>
-          <span>${item.label}</span>
-          <strong>${item.value}</strong>
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
         </article>
       `
     )
@@ -297,63 +400,37 @@ function renderCommandCenter() {
 
   spotlightList.innerHTML = [
     {
-      title: "Calendario automatico",
-      text: "Los partidos se generan solos desde los 22 clubes que cargaste en la liga.",
+      title: "Acceso con Google",
+      text: "Los correos autorizados pueden iniciar sesion y editar la liga si Firebase esta activo.",
     },
     {
-      title: "Staff editable",
-      text: "Puedes agregar moderadores desde esta misma pagina y quedan guardados en tu navegador.",
+      title: "Estadisticas de portero",
+      text: "La tabla y el panel de edicion ahora incluyen la columna de atajadas.",
     },
     {
-      title: "Lectura clara",
-      text: "Tabla, calendario, destacados y ranking de jugadores quedan visibles en una sola ruta.",
+      title: "Publicacion simple",
+      text: "La web sigue funcionando con JSON publico y puede pasar a modo en vivo con Firestore.",
     },
   ]
     .map(
       (item) => `
         <li>
-          <strong>${item.title}</strong>
-          <span>${item.text}</span>
+          <strong>${escapeHtml(item.title)}</strong>
+          <span>${escapeHtml(item.text)}</span>
         </li>
       `
     )
     .join("");
-}
 
-function renderModerators() {
-  const moderators = getAllModerators();
-  moderatorCount.textContent = moderators.length;
-  heroModeratorCount.textContent = moderators.length;
-
-  if (!moderators.length) {
-    moderatorsList.innerHTML = emptyStateTemplate.innerHTML;
-    return;
-  }
-
-  moderatorsList.innerHTML = moderators
-    .map((moderator) => {
-      const isCustom = moderator.source === "custom";
-      const statusClass = String(moderator.status || "").toLowerCase() === "standby" ? "standby" : "";
-      return `
-        <article class="moderator-item" data-source="${isCustom ? "custom" : "seed"}">
-          <div>
-            <strong>${moderator.name}</strong>
-            <span>${moderator.role}</span>
-            <p>${moderator.country} - ${isCustom ? "Agregado localmente" : "Base del torneo"}</p>
-          </div>
-          <div>
-            <span class="status-badge ${statusClass}">${moderator.status || "Activo"}</span>
-            ${isCustom ? `<button class="remove-btn" type="button" data-id="${moderator.id}">Quitar</button>` : ""}
-          </div>
-        </article>
-      `;
-    })
-    .join("");
+  globalSummary.textContent =
+    `${state.meta.leagueName || "SCC"} reune ${state.clubs.length} clubes, ${state.players.length} jugadores, ` +
+    `${getScheduledMatchCount()} partidos programados, ${getCompletedMatchCount()} ya jugados y ` +
+    `${state.firebaseSetup.editorEmails.length} correos listos para edicion compartida.`;
 }
 
 function renderStandings() {
   if (!state.clubs.length) {
-    clubStandingsBody.innerHTML = createEmptyRow(12);
+    clubStandingsBody.innerHTML = createEmptyRow(10);
     return;
   }
 
@@ -362,15 +439,13 @@ function renderStandings() {
       (club, index) => `
         <tr>
           <td><span class="rank-badge">${index + 1}</span></td>
-          <td>${club.name}</td>
-          <td>${club.country || "Global"}</td>
-          <td>${club.contact || club.manager || "Por asignar"}</td>
-          <td>${club.played || 0}</td>
-          <td>${club.wins || 0}</td>
-          <td>${club.draws || 0}</td>
-          <td>${club.losses || 0}</td>
-          <td>${club.goalsFor || 0}</td>
-          <td>${club.goalsAgainst || 0}</td>
+          <td>${escapeHtml(club.name)}</td>
+          <td>${numberValue(club.played)}</td>
+          <td>${numberValue(club.wins)}</td>
+          <td>${numberValue(club.draws)}</td>
+          <td>${numberValue(club.losses)}</td>
+          <td>${numberValue(club.goalsFor)}</td>
+          <td>${numberValue(club.goalsAgainst)}</td>
           <td>${goalDifference(club)}</td>
           <td><span class="points-badge">${pointsFor(club)}</span></td>
         </tr>
@@ -396,19 +471,22 @@ function renderClubCards() {
     .map((club) => {
       const rosterCount = state.players.filter((player) => player.clubId === club.id).length;
       const starPlayer = getTopPlayerForClub(club.id);
+
       return `
         <article class="club-card" data-reveal>
           <div class="club-card-head">
-            <span class="club-dot" style="background:${club.color || "#77f2ad"}"></span>
+            <span class="club-dot" style="background:${escapeHtml(club.color || "#77f2ad")}"></span>
             <div>
-              <h4>${club.name}</h4>
-              <span class="club-meta">${club.country || "Global"} - Contacto: ${club.contact || club.manager || "Por asignar"}</span>
-              <span class="club-meta">${club.stadium || "Sin estadio asignado"}</span>
+              <h4>${escapeHtml(club.name)}</h4>
+              <span class="club-meta">${escapeHtml(club.country || "Global")} - Contacto: ${escapeHtml(club.contact || "Por asignar")}</span>
+              <span class="club-meta">${escapeHtml(club.stadium || "Sin estadio asignado")}</span>
             </div>
           </div>
+
           <p class="club-meta">
-            Referente: ${starPlayer ? `${starPlayer.name} (${Number(starPlayer.rating).toFixed(1)})` : "Por definir"}
+            Referente: ${starPlayer ? `${escapeHtml(starPlayer.name)} (${numberValue(starPlayer.rating).toFixed(1)})` : "Por definir"}
           </p>
+
           <div class="club-stats">
             <div class="club-stat">
               <span>Puntos</span>
@@ -430,10 +508,6 @@ function renderClubCards() {
 }
 
 function populateFixtureFilter() {
-  if (!fixtureRoundFilter) {
-    return;
-  }
-
   fixtureRoundFilter.innerHTML = [
     '<option value="">Todas las fechas</option>',
     ...state.schedule.map((round) => `<option value="${round.fecha}">Fecha ${round.fecha}</option>`),
@@ -442,7 +516,7 @@ function populateFixtureFilter() {
 
 function getMatchResult(roundNumber, leg, homeId, awayId) {
   return state.matches.find((match) =>
-    Number(match.round) === Number(roundNumber) &&
+    numberValue(match.round) === numberValue(roundNumber) &&
     String(match.leg || "").toLowerCase() === String(leg || "").toLowerCase() &&
     match.homeId === homeId &&
     match.awayId === awayId
@@ -456,25 +530,26 @@ function renderFixtureList(matches, roundNumber, leg) {
       const awayClub = getClubById(match.awayId);
       const result = getMatchResult(roundNumber, leg, match.homeId, match.awayId);
       const highlights = Array.isArray(result?.highlights) ? result.highlights : [];
+
       return `
         <li class="fixture-item">
           <span class="fixture-matchday">Partido ${index + 1}</span>
-          <strong>${homeClub?.name || "Por definir"} vs ${awayClub?.name || "Por definir"}</strong>
-          <small>${homeClub?.country || "Global"} vs ${awayClub?.country || "Global"}</small>
+          <strong>${escapeHtml(homeClub?.name || "Por definir")} vs ${escapeHtml(awayClub?.name || "Por definir")}</strong>
+          <small>${escapeHtml(homeClub?.country || "Global")} vs ${escapeHtml(awayClub?.country || "Global")}</small>
           ${
             result
               ? `
                 <div class="fixture-result">
-                  <span class="fixture-score">${result.homeGoals} - ${result.awayGoals}</span>
-                  <span class="fixture-status">${result.status || "Final"}</span>
+                  <span class="fixture-score">${numberValue(result.homeGoals)} - ${numberValue(result.awayGoals)}</span>
+                  <span class="fixture-status">${escapeHtml(result.status || "Final")}</span>
                 </div>
                 ${
                   highlights.length
-                    ? `<ul class="fixture-highlights">${highlights.map((item) => `<li>${item}</li>`).join("")}</ul>`
+                    ? `<ul class="fixture-highlights">${highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
                     : ""
                 }
               `
-              : `<span class="fixture-status pending">Pendiente</span>`
+              : '<span class="fixture-status pending">Pendiente</span>'
           }
         </li>
       `;
@@ -483,19 +558,19 @@ function renderFixtureList(matches, roundNumber, leg) {
 }
 
 function renderFixtures() {
-  if (!fixturesGrid) {
-    return;
-  }
-
   if (!state.schedule.length) {
     fixturesGrid.innerHTML = emptyStateTemplate.innerHTML;
     return;
   }
 
-  const selectedRound = Number(fixtureRoundFilter?.value || 0);
+  const selectedRound = numberValue(fixtureRoundFilter.value);
   const roundsToRender = selectedRound
     ? state.schedule.filter((round) => round.fecha === selectedRound)
     : state.schedule;
+
+  fixturesSummary.textContent =
+    `${state.schedule.length} fechas base, ${state.schedule.length * 2} jornadas totales y ` +
+    `${getScheduledMatchCount()} partidos programados.`;
 
   fixturesGrid.innerHTML = roundsToRender
     .map(
@@ -512,9 +587,7 @@ function renderFixtures() {
                 <span>Ida</span>
                 <strong>Jornada ${round.fecha}</strong>
               </div>
-              <ul class="fixture-list">
-                ${renderFixtureList(round.ida, round.fecha, "ida")}
-              </ul>
+              <ul class="fixture-list">${renderFixtureList(round.ida, round.fecha, "ida")}</ul>
             </section>
 
             <section class="fixture-column">
@@ -522,9 +595,7 @@ function renderFixtures() {
                 <span>Vuelta</span>
                 <strong>Jornada ${round.fecha + state.schedule.length}</strong>
               </div>
-              <ul class="fixture-list">
-                ${renderFixtureList(round.vuelta, round.fecha, "vuelta")}
-              </ul>
+              <ul class="fixture-list">${renderFixtureList(round.vuelta, round.fecha, "vuelta")}</ul>
             </section>
           </div>
         </article>
@@ -532,18 +603,30 @@ function renderFixtures() {
     )
     .join("");
 }
-
 function populatePlayerFilters() {
-  const clubOptions = state.clubs
-    .map((club) => `<option value="${club.id}">${club.name}</option>`)
-    .join("");
-  const positionOptions = [...new Set(state.players.map((player) => player.position).filter(Boolean))]
-    .sort((a, b) => a.localeCompare(b))
-    .map((position) => `<option value="${position}">${position}</option>`)
-    .join("");
+  const selectedClub = playerClubFilter.value;
+  const selectedPosition = playerPositionFilter.value;
 
-  playerClubFilter.innerHTML = `<option value="">Todos los clubes</option>${clubOptions}`;
-  playerPositionFilter.innerHTML = `<option value="">Todas las posiciones</option>${positionOptions}`;
+  playerClubFilter.innerHTML = [
+    '<option value="">Todos los clubes</option>',
+    ...state.clubs.map((club) => `<option value="${escapeHtml(club.id)}">${escapeHtml(club.name)}</option>`),
+  ].join("");
+
+  const positions = [...new Set(state.players.map((player) => player.position).filter(Boolean))].sort((a, b) =>
+    a.localeCompare(b)
+  );
+
+  playerPositionFilter.innerHTML = [
+    '<option value="">Todas las posiciones</option>',
+    ...positions.map((position) => `<option value="${escapeHtml(position)}">${escapeHtml(position)}</option>`),
+  ].join("");
+
+  if (selectedClub) {
+    playerClubFilter.value = selectedClub;
+  }
+  if (selectedPosition) {
+    playerPositionFilter.value = selectedPosition;
+  }
 }
 
 function getFilteredPlayers() {
@@ -553,15 +636,17 @@ function getFilteredPlayers() {
 
   return sortPlayers(state.players, "rating").filter((player) => {
     const clubName = getClubName(player.clubId).toLowerCase();
+    const country = String(player.country || "").toLowerCase();
+
     const matchesSearch =
       !searchValue ||
-      player.name.toLowerCase().includes(searchValue) ||
+      String(player.name || "").toLowerCase().includes(searchValue) ||
       clubName.includes(searchValue) ||
-      String(player.country || "").toLowerCase().includes(searchValue);
+      country.includes(searchValue);
 
-    const matchesClub = !clubValue || player.clubId === clubValue;
-    const matchesPosition = !positionValue || player.position === positionValue;
-    return matchesSearch && matchesClub && matchesPosition;
+    return matchesSearch &&
+      (!clubValue || player.clubId === clubValue) &&
+      (!positionValue || player.position === positionValue);
   });
 }
 
@@ -569,7 +654,7 @@ function renderPlayers() {
   const players = getFilteredPlayers();
 
   if (!players.length) {
-    playersTableBody.innerHTML = createEmptyRow(11);
+    playersTableBody.innerHTML = createEmptyRow(12);
     return;
   }
 
@@ -577,17 +662,18 @@ function renderPlayers() {
     .map(
       (player) => `
         <tr>
-          <td>${player.name}</td>
-          <td>${player.country || "Global"}</td>
-          <td>${getClubName(player.clubId)}</td>
-          <td>${player.position}</td>
-          <td>${player.overall}</td>
-          <td>${player.matches}</td>
-          <td>${player.goals}</td>
-          <td>${player.assists}</td>
-          <td>${player.mvps}</td>
-          <td>${player.cleanSheets}</td>
-          <td>${Number(player.rating).toFixed(1)}</td>
+          <td>${escapeHtml(player.name)}</td>
+          <td>${escapeHtml(player.country || "Global")}</td>
+          <td>${escapeHtml(getClubName(player.clubId))}</td>
+          <td>${escapeHtml(player.position)}</td>
+          <td>${numberValue(player.overall)}</td>
+          <td>${numberValue(player.matches)}</td>
+          <td>${numberValue(player.goals)}</td>
+          <td>${numberValue(player.assists)}</td>
+          <td>${numberValue(player.mvps)}</td>
+          <td>${numberValue(player.cleanSheets)}</td>
+          <td>${numberValue(player.saves)}</td>
+          <td>${numberValue(player.rating).toFixed(1)}</td>
         </tr>
       `
     )
@@ -605,6 +691,7 @@ function renderLeaderboards() {
     { title: "Asistidores", field: "assists", suffix: "asistencias" },
     { title: "MVP", field: "mvps", suffix: "MVP" },
     { title: "Porterias a cero", field: "cleanSheets", suffix: "CS" },
+    { title: "Atajadas", field: "saves", suffix: "atajadas" },
     { title: "Mejor media", field: "rating", suffix: "de nota" },
   ];
 
@@ -613,14 +700,18 @@ function renderLeaderboards() {
       const items = sortPlayers(state.players, category.field)
         .slice(0, 4)
         .map((player) => {
-          const value = category.field === "rating" ? Number(player[category.field]).toFixed(1) : player[category.field];
+          const value =
+            category.field === "rating"
+              ? numberValue(player[category.field]).toFixed(1)
+              : numberValue(player[category.field]);
+
           return `
             <div class="leader-item">
               <div>
-                <strong>${player.name}</strong>
-                <small>${getClubName(player.clubId)} - ${player.position} - ${player.country || "Global"}</small>
+                <strong>${escapeHtml(player.name)}</strong>
+                <small>${escapeHtml(getClubName(player.clubId))} - ${escapeHtml(player.position)} - ${escapeHtml(player.country || "Global")}</small>
               </div>
-              <strong>${value} ${category.suffix}</strong>
+              <strong>${escapeHtml(value)} ${escapeHtml(category.suffix)}</strong>
             </div>
           `;
         })
@@ -628,7 +719,7 @@ function renderLeaderboards() {
 
       return `
         <section class="leader-section">
-          <h4>${category.title}</h4>
+          <h4>${escapeHtml(category.title)}</h4>
           ${items}
         </section>
       `;
@@ -636,87 +727,170 @@ function renderLeaderboards() {
     .join("");
 }
 
-function addModeratorFromForm(event) {
-  event.preventDefault();
-
-  const formData = new FormData(moderatorForm);
-  const requestedRole = String(formData.get("role") || "").trim();
-  const moderator = {
-    id: `custom-${Date.now()}`,
-    name: String(formData.get("name") || "").trim(),
-    country: String(formData.get("country") || "").trim(),
-    role: requestedRole,
-    status: String(formData.get("status") || "Activo").trim(),
-    source: "custom",
-  };
-
-  if (!moderator.name || !moderator.country || !moderator.role) {
+function fillClubForm() {
+  const club = getClubById(clubEditorSelect.value) || state.clubs[0];
+  if (!club) {
     return;
   }
 
-  if (/\badmin\b/i.test(requestedRole) || /\badministrador\b/i.test(requestedRole)) {
-    window.alert(`El unico admin del sitio es ${FIXED_ADMIN}. Usa un rol de moderacion diferente.`);
+  clubEditorSelect.value = club.id;
+  clubPlayedInput.value = numberValue(club.played);
+  clubWinsInput.value = numberValue(club.wins);
+  clubDrawsInput.value = numberValue(club.draws);
+  clubLossesInput.value = numberValue(club.losses);
+  clubGoalsForInput.value = numberValue(club.goalsFor);
+  clubGoalsAgainstInput.value = numberValue(club.goalsAgainst);
+}
+
+function fillPlayerForm() {
+  const player = state.players.find((item) => item.id === playerEditorSelect.value) || state.players[0];
+  if (!player) {
     return;
   }
 
-  state.customModerators.unshift(moderator);
-  saveCustomModerators();
-  moderatorForm.reset();
+  playerEditorSelect.value = player.id;
+  playerPositionInput.value = player.position || "POR DEFINIR";
+  playerOverallInput.value = numberValue(player.overall);
+  playerMatchesInput.value = numberValue(player.matches);
+  playerGoalsInput.value = numberValue(player.goals);
+  playerAssistsInput.value = numberValue(player.assists);
+  playerMvpsInput.value = numberValue(player.mvps);
+  playerCleanSheetsInput.value = numberValue(player.cleanSheets);
+  playerSavesInput.value = numberValue(player.saves);
+  playerRatingInput.value = numberValue(player.rating).toFixed(1);
+}
+
+function populateEditorSelects() {
+  const selectedClub = clubEditorSelect.value;
+  const selectedPlayer = playerEditorSelect.value;
+
+  clubEditorSelect.innerHTML = state.clubs
+    .map((club) => `<option value="${escapeHtml(club.id)}">${escapeHtml(club.name)}</option>`)
+    .join("");
+
+  playerEditorSelect.innerHTML = sortPlayers(state.players, "rating")
+    .map((player) => `<option value="${escapeHtml(player.id)}">${escapeHtml(player.name)} - ${escapeHtml(getClubName(player.clubId))}</option>`)
+    .join("");
+
+  if (selectedClub && state.clubs.some((club) => club.id === selectedClub)) {
+    clubEditorSelect.value = selectedClub;
+  }
+  if (selectedPlayer && state.players.some((player) => player.id === selectedPlayer)) {
+    playerEditorSelect.value = selectedPlayer;
+  }
+
+  fillClubForm();
+  fillPlayerForm();
+}
+
+function setSaveStatus(message, tone = "neutral") {
+  saveStatus.textContent = message;
+  saveStatus.className = `save-status ${tone}`;
+}
+
+function setEditorState() {
+  const signedIn = Boolean(state.user);
+  signInButton.classList.toggle("hidden", signedIn);
+  signOutButton.classList.toggle("hidden", !signedIn);
+
+  authUser.textContent = state.user?.email || "No has iniciado sesion";
+  editorCountLabel.textContent = `${state.firebaseSetup.editorEmails.length} correos`;
+  dataSourceLabel.textContent = state.sourceLabel;
+
+  if (!state.firebaseSetup.enabled) {
+    authStatus.textContent = "Modo publico";
+    authHelp.textContent =
+      "La web sigue funcionando con JSON publico. Para login con Google debes completar firebase-config.js.";
+    configStatus.textContent =
+      "Firebase aun no esta configurado. Cuando lo actives, podras invitar correos para editar.";
+    editorBadge.textContent = "Sin permisos de edicion";
+    editorBadge.className = "access-badge neutral";
+    editorPanel.classList.add("hidden");
+    return;
+  }
+
+  if (state.user && state.canEdit) {
+    authStatus.textContent = "Editor conectado";
+    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes y jugadores desde esta web.";
+    editorBadge.textContent = "Permiso de edicion activo";
+    editorBadge.className = "access-badge success";
+    editorPanel.classList.remove("hidden");
+  } else if (state.user) {
+    authStatus.textContent = "Sesion iniciada sin permisos";
+    authHelp.textContent =
+      "Tu correo entro con Google, pero todavia no esta incluido en editorEmails o en las reglas de Firestore.";
+    editorBadge.textContent = "Solo lectura";
+    editorBadge.className = "access-badge warning";
+    editorPanel.classList.add("hidden");
+  } else {
+    authStatus.textContent = "Listo para iniciar sesion";
+    authHelp.textContent =
+      "Entra con Google. Si tu correo esta autorizado, se abrira el panel de edicion automaticamente.";
+    editorBadge.textContent = "Esperando login";
+    editorBadge.className = "access-badge neutral";
+    editorPanel.classList.add("hidden");
+  }
+
+  if (state.sourceLabel === "Firestore en vivo") {
+    configStatus.textContent = "La liga se esta leyendo desde Firestore y la web/app vera los cambios en vivo.";
+  } else if (state.firebaseStatus === "ready") {
+    configStatus.textContent =
+      "Firebase esta listo. Si guardas por primera vez, se creara el documento de la liga en Firestore.";
+  } else if (state.firebaseStatus === "error") {
+    configStatus.textContent =
+      "Firebase no pudo inicializarse. Revisa firebase-config.js, dominios autorizados y reglas.";
+  } else {
+    configStatus.textContent = "Firebase esta activo, pero la web sigue usando el JSON publico como respaldo.";
+  }
+
+  editorPanelNote.textContent =
+    "Los cambios se guardan en Firestore para que GitHub Pages y la APK conectada los lean al abrirse.";
+}
+
+function renderAll() {
   renderMeta();
   renderSummary();
   renderCommandCenter();
-  renderModerators();
+  renderStandings();
+  populateFixtureFilter();
+  renderFixtures();
+  renderClubCards();
+  populatePlayerFilters();
+  renderPlayers();
+  renderLeaderboards();
+  populateEditorSelects();
+  setEditorState();
+  observeRevealTargets();
 }
-
-function removeModerator(event) {
-  const button = event.target.closest("[data-id]");
-  if (!button) {
+function setupRevealObserver() {
+  if (!("IntersectionObserver" in window)) {
+    document.querySelectorAll("[data-reveal]").forEach((item) => item.classList.add("is-visible"));
     return;
   }
 
-  const id = button.dataset.id;
-  state.customModerators = state.customModerators.filter((moderator) => moderator.id !== id);
-  saveCustomModerators();
-  renderMeta();
-  renderSummary();
-  renderCommandCenter();
-  renderModerators();
-}
-
-function setupFilters() {
-  playerSearch.addEventListener("input", renderPlayers);
-  playerClubFilter.addEventListener("change", renderPlayers);
-  playerPositionFilter.addEventListener("change", renderPlayers);
-}
-
-function setupFixtures() {
-  if (fixtureRoundFilter) {
-    fixtureRoundFilter.addEventListener("change", renderFixtures);
-  }
-}
-
-function setupModerators() {
-  moderatorForm.addEventListener("submit", addModeratorFromForm);
-  moderatorsList.addEventListener("click", removeModerator);
-}
-
-function setupReveal() {
-  const revealItems = document.querySelectorAll("[data-reveal]");
-  const observer = new IntersectionObserver(
+  state.revealObserver = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+          state.revealObserver.unobserve(entry.target);
         }
       });
     },
-    { threshold: 0.18 }
+    { threshold: 0.16 }
   );
+}
 
-  revealItems.forEach((item, index) => {
-    item.style.transitionDelay = `${Math.min(index * 55, 220)}ms`;
-    observer.observe(item);
+function observeRevealTargets() {
+  const targets = document.querySelectorAll("[data-reveal]:not(.is-visible)");
+  if (!state.revealObserver) {
+    targets.forEach((item) => item.classList.add("is-visible"));
+    return;
+  }
+
+  targets.forEach((item, index) => {
+    item.style.transitionDelay = `${Math.min(index * 40, 180)}ms`;
+    state.revealObserver.observe(item);
   });
 }
 
@@ -737,54 +911,194 @@ async function fetchRemoteData() {
   }
 }
 
-async function loadData() {
+async function loadBaseData() {
   const remoteData = await fetchRemoteData();
-  const localSeed = window.LEAGUE_DATA ? JSON.parse(JSON.stringify(window.LEAGUE_DATA)) : null;
+  const localSeed = window.LEAGUE_DATA ? deepClone(window.LEAGUE_DATA) : null;
   const data = remoteData || localSeed;
 
   if (!data) {
     throw new Error("No se encontraron datos del torneo.");
   }
 
-  state.meta = data.meta || {};
-  state.moderators = Array.isArray(data.moderators) ? data.moderators : [];
-  state.customModerators = loadCustomModerators();
-  state.clubs = Array.isArray(data.clubs) ? data.clubs : [];
-  state.players = Array.isArray(data.players) ? data.players : [];
-  state.matches = Array.isArray(data.matches) ? data.matches : [];
-  state.schedule = generateRoundRobinSchedule(state.clubs);
+  applyLeagueData(data, {
+    sourceLabel: remoteData ? "JSON publico" : "Respaldo local",
+  });
+}
+
+async function saveCurrentLeague(changeLabel) {
+  if (!state.firebaseSetup.enabled) {
+    setSaveStatus("Activa Firebase para guardar cambios compartidos desde la web.", "warning");
+    return;
+  }
+
+  if (!state.user || !isEditor(state.user)) {
+    setSaveStatus("Tu correo no tiene permiso de edicion.", "warning");
+    return;
+  }
+
+  const payload = buildLeagueDataForSave();
+  applyLeagueData(payload, { sourceLabel: "Firestore en vivo" });
+  renderAll();
+
+  setSaveStatus("Guardando cambios en la nube...", "pending");
+
+  try {
+    await saveLeagueData(payload, state.user);
+    state.firebaseStatus = "live";
+    state.sourceLabel = "Firestore en vivo";
+    setSaveStatus(`${changeLabel} guardado correctamente.`, "success");
+    setEditorState();
+  } catch (error) {
+    console.error(error);
+    setSaveStatus("No se pudo guardar en Firestore. Revisa la configuracion y las reglas.", "error");
+  }
+}
+
+async function handleClubSubmit(event) {
+  event.preventDefault();
+
+  const club = getClubById(clubEditorSelect.value);
+  if (!club) {
+    return;
+  }
+
+  club.played = numberValue(clubPlayedInput.value);
+  club.wins = numberValue(clubWinsInput.value);
+  club.draws = numberValue(clubDrawsInput.value);
+  club.losses = numberValue(clubLossesInput.value);
+  club.goalsFor = numberValue(clubGoalsForInput.value);
+  club.goalsAgainst = numberValue(clubGoalsAgainstInput.value);
+  state.meta.updatedAt = todayIsoLocal();
+
+  renderAll();
+  await saveCurrentLeague(`Club ${club.name}`);
+}
+
+async function handlePlayerSubmit(event) {
+  event.preventDefault();
+
+  const player = state.players.find((item) => item.id === playerEditorSelect.value);
+  if (!player) {
+    return;
+  }
+
+  player.position = playerPositionInput.value.trim() || "POR DEFINIR";
+  player.overall = numberValue(playerOverallInput.value);
+  player.matches = numberValue(playerMatchesInput.value);
+  player.goals = numberValue(playerGoalsInput.value);
+  player.assists = numberValue(playerAssistsInput.value);
+  player.mvps = numberValue(playerMvpsInput.value);
+  player.cleanSheets = numberValue(playerCleanSheetsInput.value);
+  player.saves = numberValue(playerSavesInput.value);
+  player.rating = numberValue(playerRatingInput.value);
+  state.meta.updatedAt = todayIsoLocal();
+
+  renderAll();
+  await saveCurrentLeague(`Jugador ${player.name}`);
+}
+
+function handleDownloadJson() {
+  const payload = buildLeagueDataForSave();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `scc-league-backup-${todayIsoLocal()}.json`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+  setSaveStatus("Respaldo JSON descargado.", "success");
+}
+
+function setupFilters() {
+  playerSearch.addEventListener("input", renderPlayers);
+  playerClubFilter.addEventListener("change", renderPlayers);
+  playerPositionFilter.addEventListener("change", renderPlayers);
+  fixtureRoundFilter.addEventListener("change", renderFixtures);
+}
+
+function setupEditors() {
+  clubEditorSelect.addEventListener("change", fillClubForm);
+  playerEditorSelect.addEventListener("change", fillPlayerForm);
+  clubEditorForm.addEventListener("submit", handleClubSubmit);
+  playerEditorForm.addEventListener("submit", handlePlayerSubmit);
+  downloadJsonButton.addEventListener("click", handleDownloadJson);
+}
+
+function setupAuthButtons() {
+  signInButton.addEventListener("click", async () => {
+    if (!state.firebaseSetup.enabled) {
+      window.alert("Primero configura firebase-config.js para activar el login con Google.");
+      return;
+    }
+
+    try {
+      await signInWithGoogle();
+    } catch (error) {
+      console.error(error);
+      window.alert("No se pudo iniciar sesion con Google. Revisa Firebase Auth y los dominios autorizados.");
+    }
+  });
+
+  signOutButton.addEventListener("click", async () => {
+    try {
+      await signOutUser();
+    } catch (error) {
+      console.error(error);
+      window.alert("No se pudo cerrar la sesion.");
+    }
+  });
+}
+
+async function setupFirebaseIntegration() {
+  state.firebaseSetup = getFirebaseSetup();
+  setEditorState();
+
+  await initFirebase({
+    onStatusChange: (status) => {
+      state.firebaseStatus = status.type;
+      if (status.sourceLabel && state.sourceLabel !== "Firestore en vivo") {
+        state.sourceLabel = status.sourceLabel;
+      }
+      setEditorState();
+    },
+    onUserChange: ({ user, canEdit }) => {
+      state.user = user || null;
+      state.canEdit = Boolean(canEdit);
+      setEditorState();
+    },
+    onLeagueData: ({ data, sourceLabel }) => {
+      applyLeagueData(data, { sourceLabel: sourceLabel || "Firestore en vivo" });
+      renderAll();
+      setSaveStatus("La liga se sincronizo con Firestore.", "success");
+    },
+  });
+}
+
+function showFatalError(error) {
+  console.error(error);
+  summaryGrid.innerHTML = emptyStateTemplate.innerHTML;
+  clubStandingsBody.innerHTML = createEmptyRow(10);
+  fixturesGrid.innerHTML = emptyStateTemplate.innerHTML;
+  clubCards.innerHTML = emptyStateTemplate.innerHTML;
+  playersTableBody.innerHTML = createEmptyRow(12);
+  leaderboards.innerHTML = emptyStateTemplate.innerHTML;
+  footerUpdate.textContent = "No fue posible cargar la informacion del torneo";
+  setSaveStatus("No fue posible cargar la informacion del torneo.", "error");
 }
 
 async function init() {
   try {
-    await loadData();
-    renderMeta();
-    renderSummary();
-    renderCommandCenter();
-    renderModerators();
-    renderStandings();
-    renderClubCards();
-    populateFixtureFilter();
-    renderFixtures();
-    populatePlayerFilters();
-    renderPlayers();
-    renderLeaderboards();
+    setupRevealObserver();
+    await loadBaseData();
+    renderAll();
     setupFilters();
-    setupFixtures();
-    setupModerators();
-    setupReveal();
+    setupEditors();
+    setupAuthButtons();
+    await setupFirebaseIntegration();
   } catch (error) {
-    console.error(error);
-    summaryGrid.innerHTML = emptyStateTemplate.innerHTML;
-    moderatorsList.innerHTML = emptyStateTemplate.innerHTML;
-    clubStandingsBody.innerHTML = createEmptyRow(12);
-    clubCards.innerHTML = emptyStateTemplate.innerHTML;
-    if (fixturesGrid) {
-      fixturesGrid.innerHTML = emptyStateTemplate.innerHTML;
-    }
-    playersTableBody.innerHTML = createEmptyRow(11);
-    leaderboards.innerHTML = emptyStateTemplate.innerHTML;
-    footerUpdate.textContent = "No fue posible cargar la informacion del torneo";
+    showFatalError(error);
   }
 }
 

@@ -1,229 +1,157 @@
 # SCC FC26 Virtual League
 
-Pagina web estatica para administrar y mostrar una liga SCC de FC26 con:
+Web estatica para mostrar y administrar la liga SCC de FC26.
 
-- Admin principal: `SLYINTHEBLOCK`
-- Bloque de moderadores
-- Calendario automatico de 21 fechas de ida y 21 de vuelta
-- Tabla oficial de clubes
-- Estadisticas globales
-- Ranking individual de jugadores
-- Cobertura para participantes de distintos paises
+## Lo principal
 
-## Archivos
+- Admin fijo: `SLYINTHEBLOCK`
+- Tabla normal de clubes
+- Calendario ida y vuelta
+- Estadisticas de jugadores
+- Columna de `atajadas` para porteros
+- Login con Google listo para Firebase
+- Modo publico de respaldo con `league-data.json`
 
-- `index.html`: estructura principal del sitio
-- `styles.css`: identidad visual y responsive
-- `app.js`: render, filtros y gestion local de moderadores
-- `league-data.json`: fuente principal de datos del torneo
-- `league-data.js`: respaldo local generado para abrir la pagina sin servidor
-- `abrir-app.bat`: actualiza `league-data.js` desde el JSON y abre la web
+## Archivos importantes
 
-## Como actualizar datos
+- `index.html`: estructura del sitio
+- `styles.css`: estilos
+- `app.js`: render, filtros y panel de edicion
+- `firebase-config.js`: activacion y credenciales de Firebase
+- `firebase-service.js`: login con Google y guardado en Firestore
+- `league-data.json`: base principal del torneo
+- `league-data.js`: respaldo local para abrir sin servidor
+- `abrir-app.bat`: regenera `league-data.js` y abre la web
+- `sync-android-assets.bat`: copia la web a la app Android
 
-1. Edita `league-data.json`
-2. Cambia admin, moderadores, clubes o jugadores
-3. Ejecuta `abrir-app.bat`
+## Edicion manual rapida
 
-## Como editar jugadores manualmente
+1. Abre `league-data.json`.
+2. Edita `clubs` para la tabla.
+3. Edita `players` para estadisticas individuales.
+4. Usa `saves` para las atajadas del portero.
+5. Guarda.
+6. Ejecuta `abrir-app.bat`.
 
-Todos los jugadores viven dentro del arreglo `players` en `league-data.json`.
-
-Cada jugador usa este formato:
-
-```json
-{
-  "id": "player-la-teja-fc-01",
-  "name": "LAG_Ledes69",
-  "country": "Argentina",
-  "clubId": "club-la-teja-fc",
-  "position": "POR DEFINIR",
-  "overall": 0,
-  "matches": 0,
-  "goals": 0,
-  "assists": 0,
-  "mvps": 0,
-  "cleanSheets": 0,
-  "rating": 0
-}
-```
-
-Reglas rapidas:
-
-- `clubId` debe coincidir exactamente con el `id` del club
-- `name` es el ID o nombre del jugador como quieres mostrarlo
-- `position` la puedes cambiar luego por `POR`, `DFC`, `MC`, `EI`, `DC` o la que uses
-- `overall`, `matches`, `goals`, `assists`, `mvps`, `cleanSheets` y `rating` se pueden ir actualizando cuando empiece la liga
-
-## Como editar resultados y tabla manualmente
-
-Cada club vive dentro del arreglo `clubs` en `league-data.json`.
-
-Estos campos controlan la tabla:
-
-- `played`
-- `wins`
-- `draws`
-- `losses`
-- `goalsFor`
-- `goalsAgainst`
-
-Cuando cambias esos valores, la tabla se reordena sola en la web.
-
-## Calendario
-
-- Los partidos se generan automaticamente desde el arreglo `clubs`
-- Con 22 equipos, la web crea 21 fechas base de ida y 21 de vuelta
-- No necesitas escribir los cruces manualmente
-
-## Subirlo a GitHub Pages sin git
-
-En este equipo no esta instalado `git`, asi que la forma mas simple es hacerlo desde la web de GitHub:
-
-1. Crea un repositorio nuevo en GitHub
-2. Sube estos archivos:
-   `index.html`
-   `styles.css`
-   `app.js`
-   `league-data.json`
-   `league-data.js`
-   `README.md`
-3. En GitHub entra a `Settings > Pages`
-4. En `Build and deployment`, elige `Deploy from a branch`
-5. Selecciona la rama `main` y la carpeta `/root`
-6. Guarda los cambios y espera unos minutos
-
-La pagina quedara en una URL parecida a:
-
-`https://TU-USUARIO.github.io/NOMBRE-DEL-REPO/`
-
-## Como editar despues desde GitHub
-
-Si ya la publicaste en GitHub Pages, puedes editarla sin instalar nada:
-
-1. Abre el repositorio en GitHub
-2. Entra a `league-data.json`
-3. Pulsa el icono del lapiz para editar
-4. Cambia clubes, jugadores o resultados
-5. Guarda con `Commit changes`
-
-Si editas `league-data.json`, recuerda actualizar tambien `league-data.js` si vas a abrir la pagina localmente fuera de GitHub.
-
-## Admin fijo
-
-- El sitio muestra solo a `SLYINTHEBLOCK` como admin principal
-- Aunque cambies el campo `meta.admin` en el JSON, la interfaz mantiene ese admin fijo
-- Los moderadores no pueden guardarse con rol `Admin` o `Administrador` desde el formulario
-
-## Como agregar equipos
-
-Cada equipo va dentro del arreglo `clubs` en `league-data.json`.
-
-Ejemplo:
+Ejemplo de jugador:
 
 ```json
 {
-  "id": "club-nuevo",
-  "name": "Nuevo Club",
-  "country": "Colombia",
-  "contact": "+57 300 0000000",
-  "stadium": "Nombre del estadio",
-  "color": "#00d084",
-  "played": 0,
-  "wins": 0,
-  "draws": 0,
-  "losses": 0,
-  "goalsFor": 0,
-  "goalsAgainst": 0
-}
-```
-
-## Como agregar jugadores
-
-Cada jugador va dentro del arreglo `players` y debe apuntar al equipo con `clubId`.
-
-Ejemplo:
-
-```json
-{
-  "id": "player-nuevo",
-  "name": "Jugador Nuevo",
-  "country": "Colombia",
-  "clubId": "club-nuevo",
-  "position": "DC",
+  "id": "player-mc-originals-01",
+  "name": "Fran-kim25",
+  "country": "Chile",
+  "clubId": "club-mc-originals",
+  "position": "POR",
   "overall": 85,
-  "matches": 0,
+  "matches": 2,
   "goals": 0,
   "assists": 0,
   "mvps": 0,
-  "cleanSheets": 0,
-  "rating": 0
+  "cleanSheets": 1,
+  "saves": 0,
+  "rating": 8.1
 }
 ```
 
-## Moderadores
+## Login con Google y edicion compartida
 
-- Los moderadores incluidos en `league-data.json` son la base oficial
-- Los moderadores agregados desde la web se guardan en el navegador
-- Puedes quitarlos desde el mismo panel si fueron creados localmente
+La web ya trae el panel, pero para que funcione de verdad debes configurar Firebase.
 
-## Publicacion
+### 1. Crear proyecto Firebase
 
-Si publicas la carpeta en GitHub Pages, Netlify o Vercel, la web intentara leer `league-data.json` directamente.
+Necesitas:
 
-## App Android
+- Firebase Authentication
+- Google como proveedor de login
+- Firestore Database
 
-Tambien deje una app Android en:
+### 2. Editar `firebase-config.js`
 
-`android-app/`
+Cambia este archivo:
 
-La app usa un `WebView` y ahora intenta cargar primero tu GitHub Pages:
+```js
+window.SCC_FIREBASE_CONFIG = {
+  enabled: true,
+  leagueDocumentPath: "leagues/scc-main",
+  editorEmails: [
+    "tu-correo@gmail.com",
+    "moderador1@gmail.com"
+  ],
+  firebaseConfig: {
+    apiKey: "TU_API_KEY",
+    authDomain: "TU_PROYECTO.firebaseapp.com",
+    projectId: "TU_PROYECTO",
+    storageBucket: "TU_PROYECTO.firebasestorage.app",
+    messagingSenderId: "123456789",
+    appId: "1:123456789:web:abcdef"
+  }
+};
+```
+
+### 3. Autorizar el dominio
+
+En Firebase Auth agrega como dominio autorizado:
+
+- `lordpingostin.github.io`
+
+Si vas a probar localmente, agrega tambien:
+
+- `localhost`
+
+### 4. Reglas base de Firestore
+
+Ejemplo simple:
+
+```txt
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /leagues/{leagueId} {
+      allow read: if true;
+      allow write: if request.auth != null
+        && request.auth.token.email in [
+          "tu-correo@gmail.com",
+          "moderador1@gmail.com"
+        ];
+    }
+  }
+}
+```
+
+Cuando eso este listo:
+
+- cualquier persona vera la liga
+- los correos autorizados podran entrar con Google
+- solo esos correos podran editar desde la web
+- la APK conectada tambien leera los cambios al abrirse con internet
+
+## GitHub Pages
+
+El sitio publico vive en:
 
 `https://lordpingostin.github.io/LIGA-SCC/`
 
-Si esa web no responde o no hay internet, cae al respaldo local empaquetado dentro de la app.
+Si cambias archivos y quieres subirlos:
 
-Asi abre:
+1. Guarda tus cambios.
+2. Haz `Commit` en GitHub Desktop.
+3. Haz `Push origin`.
+4. Espera 1 a 5 minutos.
 
-- equipos
-- jugadores
-- calendario
-- tabla
+## App Android
 
-con actualizacion online cuando cambies la pagina publica.
+Proyecto en:
 
-### Como abrirla en Android Studio
+`android-app/`
 
-1. Abre Android Studio
-2. Pulsa `Open`
-3. Selecciona la carpeta `android-app`
-4. Espera a que sincronice Gradle
-5. Ejecuta la app en un telefono Android o emulador
+La app intenta abrir primero:
 
-### Como generar APK
+`https://lordpingostin.github.io/LIGA-SCC/`
 
-Dentro de Android Studio:
+Si no hay internet, usa el respaldo local de `assets`.
 
-1. Ve a `Build > Build Bundle(s) / APK(s) > Build APK(s)`
-2. Espera a que termine
-3. Abre la carpeta del APK desde el aviso de Android Studio
+Cuando cambies la web local:
 
-### Como actualizar la app si cambias la liga
-
-Si editas estos archivos:
-
-- `index.html`
-- `styles.css`
-- `app.js`
-- `league-data.json`
-- `league-data.js`
-
-puedes ejecutar:
-
-`sync-android-assets.bat`
-
-o copiarlos manualmente dentro de:
-
-`android-app/app/src/main/assets/`
-
-para que la app Android use la version nueva.
+1. Ejecuta `sync-android-assets.bat`
+2. Abre `android-app` en Android Studio
+3. Compila de nuevo el APK
