@@ -4,7 +4,10 @@ service cloud.firestore {
     match /leagues/{leagueId} {
       allow read: if true;
       allow write: if request.auth != null
-        && request.auth.token.email == "assencarlos2007@gmail.com";
+        && request.auth.token.email in [
+          "assencarlos2007@gmail.com",
+          "Santinotamer.7@gmail.com"
+        ];
     }
   }
 }

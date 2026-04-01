@@ -3,6 +3,7 @@ window.SCC_FIREBASE_CONFIG = {
   leagueDocumentPath: "leagues/scc-main",
   editorEmails: [
     "assencarlos2007@gmail.com",
+    "Santinotamer.7@gmail.com",
   ],
   firebaseConfig: {
     apiKey: "AIzaSyDsq_rqb7KoGtLWTgXtn2VwtZYe3WcTyow",
