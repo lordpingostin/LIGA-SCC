@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SCC FC26 Virtual League</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="site-background" aria-hidden="true">
+    <div class="site-glow site-glow-left"></div>
+    <div class="site-glow site-glow-right"></div>
+    <div class="site-grid"></div>
+  </div>
+
+  <header class="hero-section">
+    <nav class="topbar">
+      <a class="brand-lockup" href="#inicio" aria-label="Ir al inicio de SCC">
+        <span class="brand-mark">SCC</span>
+        <span>
+          <strong id="brandName">SCC FC26 Virtual League</strong>
+          <small id="brandRegion">Competencia global</small>
+        </span>
+      </a>
+
+      <div class="topbar-actions">
+        <span id="seasonBadge" class="status-chip">Season 01</span>
+        <span class="status-chip">Admin: <strong id="adminBadge">SLYINTHEBLOCK</strong></span>
+      </div>
+    </nav>
+
+    <section class="hero-content" id="inicio">
+      <div class="hero-copy" data-reveal>
+        <p class="eyebrow">FC26 virtual league</p>
+        <h1 id="heroTitle">La sede oficial del torneo SCC.</h1>
+        <p class="hero-text" id="heroDescription">
+          Organiza tu liga internacional, publica resultados, controla moderadores y comparte
+          estadisticas de clubes y jugadores desde una sola pagina.
+        </p>
+
+        <div class="hero-badges" id="heroBadges">
+          <span class="signal-pill">Global</span>
+          <span class="signal-pill">FC26</span>
+          <span class="signal-pill">Clubs Pro</span>
+        </div>
+
+        <div class="hero-actions">
+          <a class="primary-btn" href="#panel-admin">Administrar torneo</a>
+          <a class="secondary-btn" href="#partidos">Ver calendario</a>
+        </div>
+      </div>
+
+      <div class="hero-stage" data-reveal>
+        <div class="hero-stage-panel">
+          <p class="stage-label">League control</p>
+          <div class="hero-stage-headline">
+            <span class="hero-stage-year">26</span>
+            <div>
+              <strong id="heroAdmin">SLYINTHEBLOCK</strong>
+              <p>Admin principal de la liga SCC</p>
+            </div>
+          </div>
+
+          <div class="hero-stage-stats">
+            <article>
+              <span>Clubes</span>
+              <strong id="heroClubCount">0</strong>
+            </article>
+            <article>
+              <span>Jugadores</span>
+              <strong id="heroPlayerCount">0</strong>
+            </article>
+            <article>
+              <span>Moderadores</span>
+              <strong id="heroModeratorCount">0</strong>
+            </article>
+            <article>
+              <span>Paises</span>
+              <strong id="heroCountryCount">0</strong>
+            </article>
+          </div>
+
+          <p class="hero-stage-update">
+            Ultima actualizacion:
+            <strong id="updatedAt">Pendiente</strong>
+          </p>
+        </div>
+      </div>
+    </section>
+  </header>
+
+  <main class="app-shell">
+    <section class="summary-band" id="summaryGrid" data-reveal></section>
+
+    <section class="section-block admin-block" id="panel-admin">
+      <div class="section-intro" data-reveal>
+        <p class="eyebrow">Centro de mando</p>
+        <h2>Administra la liga SCC sin salir de la portada.</h2>
+        <p>
+          Tu perfil de admin, el staff de moderacion y la configuracion del torneo quedan visibles
+          para jugadores de cualquier pais.
+        </p>
+      </div>
+
+      <div class="admin-layout">
+        <article class="command-panel" data-reveal>
+          <div class="panel-heading">
+            <p class="section-tag">Administrador</p>
+            <h3 id="adminName">SLYINTHEBLOCK</h3>
+          </div>
+
+          <div class="admin-profile">
+            <div>
+              <span class="profile-label">Rol principal</span>
+              <strong>League Admin</strong>
+            </div>
+            <div>
+              <span class="profile-label">Formato</span>
+              <strong id="formatLabel">Liga internacional</strong>
+            </div>
+            <div>
+              <span class="profile-label">Videojuego</span>
+              <strong id="gameLabel">EA SPORTS FC 26</strong>
+            </div>
+            <div>
+              <span class="profile-label">Modo</span>
+              <strong id="modeLabel">Clubs Pro</strong>
+            </div>
+          </div>
+
+          <div class="command-list" id="commandList"></div>
+        </article>
+
+        <article class="moderator-panel" data-reveal>
+          <div class="panel-heading">
+            <p class="section-tag">Moderadores</p>
+            <h3>Agrega staff para apoyar el torneo</h3>
+          </div>
+
+          <form id="moderatorForm" class="moderator-form">
+            <label>
+              Nombre o tag
+              <input id="moderatorName" name="name" type="text" placeholder="Ej: Assen" required>
+            </label>
+
+            <label>
+              Pais
+              <input id="moderatorCountry" name="country" type="text" placeholder="Ej: Colombia" required>
+            </label>
+
+            <label>
+              Rol
+              <input id="moderatorRole" name="role" type="text" placeholder="Ej: Control de resultados" required>
+            </label>
+
+            <label>
+              Estado
+              <select id="moderatorStatus" name="status">
+                <option value="Activo">Activo</option>
+                <option value="Standby">Standby</option>
+              </select>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar moderador</button>
+          </form>
+
+          <div class="moderator-meta">
+            <span>Total staff: <strong id="moderatorCount">0</strong></span>
+            <span>Guardado en este navegador</span>
+          </div>
+
+          <div class="moderator-list" id="moderatorsList"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block competition-block">
+      <div class="competition-layout">
+        <article class="table-panel" data-reveal>
+          <div class="panel-heading inline-heading">
+            <div>
+              <p class="section-tag">Clasificacion</p>
+              <h3>Tabla oficial de clubes</h3>
+            </div>
+            <p class="panel-note">Desempate por puntos, diferencia de gol y goles a favor.</p>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Club</th>
+                  <th>Pais</th>
+                  <th>Contacto</th>
+                  <th>PJ</th>
+                  <th>G</th>
+                  <th>E</th>
+                  <th>P</th>
+                  <th>GF</th>
+                  <th>GC</th>
+                  <th>DG</th>
+                  <th>PTS</th>
+                </tr>
+              </thead>
+              <tbody id="clubStandingsBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="leader-panel" data-reveal>
+          <div class="panel-heading">
+            <p class="section-tag">Top ranking</p>
+            <h3>Referencias del torneo</h3>
+          </div>
+          <div class="leaderboard" id="leaderboards"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-block fixtures-block" id="partidos">
+      <div class="panel-heading inline-heading" data-reveal>
+        <div>
+          <p class="section-tag">Partidos</p>
+          <h3>Calendario oficial de la liga</h3>
+        </div>
+        <p class="panel-note" id="fixturesSummary">
+          21 fechas de ida y 21 de vuelta generadas automaticamente para todos los clubes.
+        </p>
+      </div>
+
+      <div class="fixtures-toolbar" data-reveal>
+        <label class="filter-control fixtures-filter">
+          Ver fecha
+          <select id="fixtureRoundFilter">
+            <option value="">Todas las fechas</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="fixtures-grid" id="fixturesGrid"></div>
+    </section>
+
+    <section class="section-block club-block" id="clubes">
+      <div class="panel-heading inline-heading" data-reveal>
+        <div>
+          <p class="section-tag">Clubes</p>
+          <h3>Mapa competitivo de la liga</h3>
+        </div>
+        <p class="panel-note">
+          Vista rapida del rendimiento, origen y potencia ofensiva de cada equipo.
+        </p>
+      </div>
+      <div class="club-grid" id="clubCards"></div>
+    </section>
+
+    <section class="section-block players-block" id="ranking-jugadores">
+      <div class="panel-heading inline-heading" data-reveal>
+        <div>
+          <p class="section-tag">Jugadores</p>
+          <h3>Estadisticas individuales y filtro rapido</h3>
+        </div>
+        <p class="panel-note">
+          Busca por nombre y filtra por club o posicion para revisar el rendimiento completo.
+        </p>
+      </div>
+
+      <div class="filters-row" data-reveal>
+        <label class="filter-control">
+          Buscar jugador
+          <input id="playerSearch" type="search" placeholder="Ej: Torres">
+        </label>
+
+        <label class="filter-control">
+          Club
+          <select id="playerClubFilter">
+            <option value="">Todos los clubes</option>
+          </select>
+        </label>
+
+        <label class="filter-control">
+          Posicion
+          <select id="playerPositionFilter">
+            <option value="">Todas las posiciones</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="table-wrap" data-reveal>
+        <table>
+          <thead>
+            <tr>
+              <th>Jugador</th>
+              <th>Pais</th>
+              <th>Club</th>
+              <th>Pos</th>
+              <th>OVR</th>
+              <th>PJ</th>
+              <th>G</th>
+              <th>A</th>
+              <th>MVP</th>
+              <th>CS</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody id="playersTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section-block global-block">
+      <div class="global-layout">
+        <article class="global-panel" data-reveal>
+          <p class="section-tag">Cobertura</p>
+          <h3>Torneo listo para jugadores de todos los paises.</h3>
+          <p id="globalSummary">
+            SCC esta preparado para mostrar clasificacion, staff y estadisticas con una sola pagina
+            publica y facil de compartir.
+          </p>
+        </article>
+
+        <article class="global-panel spotlight-panel" data-reveal>
+          <p class="section-tag">Operacion</p>
+          <h3>Un sitio liviano para publicar rapido.</h3>
+          <ul class="spotlight-list" id="spotlightList"></ul>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <strong id="footerBrand">SCC FC26 Virtual League</strong>
+      <p id="footerRegion">Competencia global de FC26 Clubs Pro.</p>
+    </div>
+    <div>
+      <strong>Estado del sitio</strong>
+      <p id="footerUpdate">Datos listos para cargar</p>
+    </div>
+  </footer>
+
+  <template id="emptyStateTemplate">
+    <div class="empty-state">
+      <p>No hay datos cargados todavia.</p>
+    </div>
+  </template>
+
+  <script src="league-data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

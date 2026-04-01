@@ -49,12 +49,12 @@
                       "contact":  "+56 9 6150 6215",
                       "stadium":  "Por definir",
                       "color":  "#77f2ad",
-                      "played":  2,
-                      "wins":  2,
+                      "played":  0,
+                      "wins":  0,
                       "draws":  0,
                       "losses":  0,
-                      "goalsFor":  4,
-                      "goalsAgainst":  1
+                      "goalsFor":  0,
+                      "goalsAgainst":  0
                   },
                   {
                       "id":  "club-club-america",
@@ -343,12 +343,12 @@
                       "contact":  "+54 9 299 523-9240",
                       "stadium":  "Por definir",
                       "color":  "#f1c0ff",
-                      "played":  2,
+                      "played":  0,
                       "wins":  0,
                       "draws":  0,
-                      "losses":  2,
-                      "goalsFor":  1,
-                      "goalsAgainst":  4
+                      "losses":  0,
+                      "goalsFor":  0,
+                      "goalsAgainst":  0
                   }
               ],
     "players":  [
@@ -5285,14 +5285,14 @@
                         "name":  "Fran-kim25",
                         "country":  "Chile",
                         "clubId":  "club-mc-originals",
-                        "position":  "POR",
-                        "overall":  85,
-                        "matches":  2,
+                        "position":  "POR DEFINIR",
+                        "overall":  0,
+                        "matches":  0,
                         "goals":  0,
                         "assists":  0,
                         "mvps":  0,
-                        "cleanSheets":  1,
-                        "rating":  8.1
+                        "cleanSheets":  0,
+                        "rating":  0
                     },
                     {
                         "id":  "player-mc-originals-02",
@@ -5537,14 +5537,14 @@
                         "name":  "SlyInTheBlock",
                         "country":  "Chile",
                         "clubId":  "club-mc-originals",
-                        "position":  "DC",
-                        "overall":  89,
-                        "matches":  2,
-                        "goals":  2,
+                        "position":  "POR DEFINIR",
+                        "overall":  0,
+                        "matches":  0,
+                        "goals":  0,
                         "assists":  0,
                         "mvps":  0,
                         "cleanSheets":  0,
-                        "rating":  8.7
+                        "rating":  0
                     },
                     {
                         "id":  "player-mc-originals-20",
@@ -5552,13 +5552,13 @@
                         "country":  "Chile",
                         "clubId":  "club-mc-originals",
                         "position":  "POR DEFINIR",
-                        "overall":  86,
-                        "matches":  2,
+                        "overall":  0,
+                        "matches":  0,
                         "goals":  0,
                         "assists":  0,
-                        "mvps":  1,
+                        "mvps":  0,
                         "cleanSheets":  0,
-                        "rating":  8.4
+                        "rating":  0
                     },
                     {
                         "id":  "player-america-01",
@@ -6119,38 +6119,6 @@
                         "mvps":  0,
                         "cleanSheets":  0,
                         "rating":  0
-                    }
-                ],
-    "matches":  [
-                    {
-                        "round":  1,
-                        "leg":  "ida",
-                        "homeId":  "club-mc-originals",
-                        "awayId":  "club-gitanos-chs",
-                        "homeGoals":  1,
-                        "awayGoals":  0,
-                        "status":  "Final",
-                        "highlights":  [
-                                           "MC ORIGINALS gano 1-0",
-                                           "SlyInTheBlock marco 1 gol",
-                                           "Fran-kim25 mantuvo el arco en cero",
-                                           "MVP: DonFifa25"
-                                       ]
-                    },
-                    {
-                        "round":  1,
-                        "leg":  "vuelta",
-                        "homeId":  "club-gitanos-chs",
-                        "awayId":  "club-mc-originals",
-                        "homeGoals":  1,
-                        "awayGoals":  3,
-                        "status":  "Final",
-                        "highlights":  [
-                                           "MC ORIGINALS gano 3-1",
-                                           "SlyInTheBlock marco 1 gol",
-                                           "Fran-kim25 tuvo atajadas clave",
-                                           "MVP: DonFifa25"
-                                       ]
                     }
                 ]
 };

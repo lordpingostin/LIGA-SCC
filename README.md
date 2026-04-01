@@ -170,3 +170,60 @@ Ejemplo:
 ## Publicacion
 
 Si publicas la carpeta en GitHub Pages, Netlify o Vercel, la web intentara leer `league-data.json` directamente.
+
+## App Android
+
+Tambien deje una app Android en:
+
+`android-app/`
+
+La app usa un `WebView` y ahora intenta cargar primero tu GitHub Pages:
+
+`https://lordpingostin.github.io/LIGA-SCC/`
+
+Si esa web no responde o no hay internet, cae al respaldo local empaquetado dentro de la app.
+
+Asi abre:
+
+- equipos
+- jugadores
+- calendario
+- tabla
+
+con actualizacion online cuando cambies la pagina publica.
+
+### Como abrirla en Android Studio
+
+1. Abre Android Studio
+2. Pulsa `Open`
+3. Selecciona la carpeta `android-app`
+4. Espera a que sincronice Gradle
+5. Ejecuta la app en un telefono Android o emulador
+
+### Como generar APK
+
+Dentro de Android Studio:
+
+1. Ve a `Build > Build Bundle(s) / APK(s) > Build APK(s)`
+2. Espera a que termine
+3. Abre la carpeta del APK desde el aviso de Android Studio
+
+### Como actualizar la app si cambias la liga
+
+Si editas estos archivos:
+
+- `index.html`
+- `styles.css`
+- `app.js`
+- `league-data.json`
+- `league-data.js`
+
+puedes ejecutar:
+
+`sync-android-assets.bat`
+
+o copiarlos manualmente dentro de:
+
+`android-app/app/src/main/assets/`
+
+para que la app Android use la version nueva.
