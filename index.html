@@ -288,6 +288,72 @@
 
             <button class="primary-btn form-btn" type="submit">Guardar jugador</button>
           </form>
+
+          <form id="matchEditorForm" class="editor-form">
+            <div class="editor-form-head">
+              <h4>Editar partido</h4>
+              <p>Cierra fechas, define marcador final y escribe el detalle de goles y asistencias.</p>
+            </div>
+
+            <label>
+              Fecha base
+              <select id="matchRoundSelect" required></select>
+            </label>
+
+            <label>
+              Ida o vuelta
+              <select id="matchLegSelect" required>
+                <option value="ida">Ida</option>
+                <option value="vuelta">Vuelta</option>
+              </select>
+            </label>
+
+            <label>
+              Partido
+              <select id="matchFixtureSelect" required></select>
+            </label>
+
+            <label>
+              Local
+              <input id="matchHomeTeamInput" type="text" readonly>
+            </label>
+
+            <label>
+              Visitante
+              <input id="matchAwayTeamInput" type="text" readonly>
+            </label>
+
+            <label>
+              Estado
+              <select id="matchStatusSelect" required>
+                <option value="pendiente">Pendiente</option>
+                <option value="final">Final</option>
+                <option value="aplazado">Aplazado</option>
+              </select>
+            </label>
+
+            <label>
+              Goles local
+              <input id="matchHomeGoalsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Goles visitante
+              <input id="matchAwayGoalsInput" type="number" min="0" required>
+            </label>
+
+            <label class="editor-field-wide">
+              Goles
+              <textarea id="matchGoalsDetailsInput" rows="5" placeholder="Una linea por detalle. Ej: SlyInTheBlock x2&#10;Fran-kim25 x1"></textarea>
+            </label>
+
+            <label class="editor-field-wide">
+              Asistencias
+              <textarea id="matchAssistsDetailsInput" rows="5" placeholder="Una linea por detalle. Ej: DonFifa25 x1&#10;Fran-kim25 x1"></textarea>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar partido</button>
+          </form>
         </div>
 
         <div class="editor-actions">

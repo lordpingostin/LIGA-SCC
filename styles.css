@@ -667,7 +667,7 @@ select {
 }
 
 .editor-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
 .editor-form {
@@ -696,6 +696,7 @@ select {
 
 .editor-form input,
 .editor-form select,
+.editor-form textarea,
 .filter-control input,
 .filter-control select {
   width: 100%;
@@ -708,12 +709,24 @@ select {
   outline: none;
 }
 
+.editor-form textarea {
+  min-height: 122px;
+  padding: 14px;
+  resize: vertical;
+  font: inherit;
+}
+
 .editor-form input:focus,
 .editor-form select:focus,
+.editor-form textarea:focus,
 .filter-control input:focus,
 .filter-control select:focus {
   border-color: rgba(119, 242, 173, 0.48);
   box-shadow: 0 0 0 4px rgba(119, 242, 173, 0.12);
+}
+
+.editor-field-wide {
+  grid-column: 1 / -1;
 }
 
 .editor-actions {
@@ -1136,6 +1149,27 @@ tbody tr:hover {
   color: var(--muted);
   display: grid;
   gap: 6px;
+}
+
+.fixture-detail-group {
+  margin-top: 10px;
+}
+
+.fixture-detail-group span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.fixture-detail-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  color: #dbe7ff;
 }
 
 .fixture-matchday {

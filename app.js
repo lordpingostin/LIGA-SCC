@@ -76,6 +76,17 @@ const playerMvpsInput = document.getElementById("playerMvpsInput");
 const playerCleanSheetsInput = document.getElementById("playerCleanSheetsInput");
 const playerSavesInput = document.getElementById("playerSavesInput");
 const playerRatingInput = document.getElementById("playerRatingInput");
+const matchEditorForm = document.getElementById("matchEditorForm");
+const matchRoundSelect = document.getElementById("matchRoundSelect");
+const matchLegSelect = document.getElementById("matchLegSelect");
+const matchFixtureSelect = document.getElementById("matchFixtureSelect");
+const matchHomeTeamInput = document.getElementById("matchHomeTeamInput");
+const matchAwayTeamInput = document.getElementById("matchAwayTeamInput");
+const matchStatusSelect = document.getElementById("matchStatusSelect");
+const matchHomeGoalsInput = document.getElementById("matchHomeGoalsInput");
+const matchAwayGoalsInput = document.getElementById("matchAwayGoalsInput");
+const matchGoalsDetailsInput = document.getElementById("matchGoalsDetailsInput");
+const matchAssistsDetailsInput = document.getElementById("matchAssistsDetailsInput");
 const downloadJsonButton = document.getElementById("downloadJsonButton");
 const saveStatus = document.getElementById("saveStatus");
 
@@ -183,6 +194,20 @@ function normalizePlayer(player = {}) {
   };
 }
 
+function normalizeMatch(match = {}) {
+  return {
+    ...match,
+    round: numberValue(match.round),
+    matchIndex: numberValue(match.matchIndex),
+    homeGoals: numberValue(match.homeGoals),
+    awayGoals: numberValue(match.awayGoals),
+    status: match.status || "Pendiente",
+    scorers: Array.isArray(match.scorers) ? match.scorers : [],
+    assists: Array.isArray(match.assists) ? match.assists : [],
+    highlights: Array.isArray(match.highlights) ? match.highlights : [],
+  };
+}
+
 function normalizeLeagueData(data = {}) {
   const normalized = deepClone(data || {});
 
@@ -204,7 +229,7 @@ function normalizeLeagueData(data = {}) {
   normalized.moderators = Array.isArray(normalized.moderators) ? normalized.moderators : [];
   normalized.clubs = Array.isArray(normalized.clubs) ? normalized.clubs.map(normalizeClub) : [];
   normalized.players = Array.isArray(normalized.players) ? normalized.players.map(normalizePlayer) : [];
-  normalized.matches = Array.isArray(normalized.matches) ? normalized.matches : [];
+  normalized.matches = Array.isArray(normalized.matches) ? normalized.matches.map(normalizeMatch) : [];
 
   return normalized;
 }
@@ -554,13 +579,90 @@ function getMatchResult(roundNumber, leg, homeId, awayId) {
   );
 }
 
+function parseDetailLines(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function composeMatchHighlights(scorers, assists) {
+  return [
+    ...scorers.map((item) => `Gol: ${item}`),
+    ...assists.map((item) => `Asistencia: ${item}`),
+  ];
+}
+
+function getScheduledMatches(roundNumber, leg) {
+  const round = state.schedule.find((item) => item.fecha === numberValue(roundNumber));
+  if (!round) {
+    return [];
+  }
+
+  return String(leg).toLowerCase() === "vuelta" ? round.vuelta : round.ida;
+}
+
+function getSelectedScheduleMatch() {
+  const roundNumber = numberValue(matchRoundSelect.value);
+  const leg = String(matchLegSelect.value || "ida").toLowerCase();
+  const matchIndex = numberValue(matchFixtureSelect.value);
+  const matches = getScheduledMatches(roundNumber, leg);
+  return {
+    roundNumber,
+    leg,
+    matchIndex,
+    match: matches[matchIndex] || null,
+  };
+}
+
+function getStatusLabel(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "final") {
+    return "Final";
+  }
+  if (normalized === "aplazado") {
+    return "Aplazado";
+  }
+  return "Pendiente";
+}
+
+function getStatusValue(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "aplazado") {
+    return "aplazado";
+  }
+  if (normalized === "final") {
+    return "final";
+  }
+  return "pendiente";
+}
+
+function renderFixtureDetailGroup(title, items) {
+  if (!items.length) {
+    return "";
+  }
+
+  return `
+    <div class="fixture-detail-group">
+      <span>${escapeHtml(title)}</span>
+      <ul class="fixture-detail-list">
+        ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
 function renderFixtureList(matches, roundNumber, leg) {
   return matches
     .map((match, index) => {
       const homeClub = getClubById(match.homeId);
       const awayClub = getClubById(match.awayId);
       const result = getMatchResult(roundNumber, leg, match.homeId, match.awayId);
-      const highlights = Array.isArray(result?.highlights) ? result.highlights : [];
+      const scorers = Array.isArray(result?.scorers) ? result.scorers : [];
+      const assists = Array.isArray(result?.assists) ? result.assists : [];
+      const highlights = Array.isArray(result?.highlights)
+        ? result.highlights.filter((item) => !/^Gol: |^Asistencia: /i.test(String(item)))
+        : [];
 
       return `
         <li class="fixture-item">
@@ -574,6 +676,8 @@ function renderFixtureList(matches, roundNumber, leg) {
                   <span class="fixture-score">${numberValue(result.homeGoals)} - ${numberValue(result.awayGoals)}</span>
                   <span class="fixture-status">${escapeHtml(result.status || "Final")}</span>
                 </div>
+                ${renderFixtureDetailGroup("Goles", scorers)}
+                ${renderFixtureDetailGroup("Asistencias", assists)}
                 ${
                   highlights.length
                     ? `<ul class="fixture-highlights">${highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
@@ -801,6 +905,71 @@ function fillPlayerForm() {
   playerRatingInput.value = numberValue(player.rating).toFixed(1);
 }
 
+function fillMatchForm() {
+  const { roundNumber, leg, matchIndex, match } = getSelectedScheduleMatch();
+  if (!match) {
+    matchFixtureSelect.innerHTML = '<option value="">Sin partidos</option>';
+    matchHomeTeamInput.value = "";
+    matchAwayTeamInput.value = "";
+    matchStatusSelect.value = "pendiente";
+    matchHomeGoalsInput.value = 0;
+    matchAwayGoalsInput.value = 0;
+    matchGoalsDetailsInput.value = "";
+    matchAssistsDetailsInput.value = "";
+    return;
+  }
+
+  const result = getMatchResult(roundNumber, leg, match.homeId, match.awayId);
+  const homeClub = getClubById(match.homeId);
+  const awayClub = getClubById(match.awayId);
+
+  matchFixtureSelect.value = `${matchIndex}`;
+  matchHomeTeamInput.value = homeClub?.name || "Por definir";
+  matchAwayTeamInput.value = awayClub?.name || "Por definir";
+  matchStatusSelect.value = getStatusValue(result?.status);
+  matchHomeGoalsInput.value = result ? numberValue(result.homeGoals) : 0;
+  matchAwayGoalsInput.value = result ? numberValue(result.awayGoals) : 0;
+  matchGoalsDetailsInput.value = Array.isArray(result?.scorers) ? result.scorers.join("\n") : "";
+  matchAssistsDetailsInput.value = Array.isArray(result?.assists) ? result.assists.join("\n") : "";
+}
+
+function populateMatchEditor() {
+  const selectedRound = matchRoundSelect.value;
+  const selectedLeg = matchLegSelect.value || "ida";
+  const selectedMatch = matchFixtureSelect.value;
+
+  matchRoundSelect.innerHTML = state.schedule
+    .map((round) => `<option value="${round.fecha}">Fecha ${round.fecha}</option>`)
+    .join("");
+
+  if (selectedRound && state.schedule.some((round) => String(round.fecha) === selectedRound)) {
+    matchRoundSelect.value = selectedRound;
+  } else if (state.schedule[0]) {
+    matchRoundSelect.value = `${state.schedule[0].fecha}`;
+  }
+
+  matchLegSelect.value = selectedLeg;
+
+  const matches = getScheduledMatches(matchRoundSelect.value, matchLegSelect.value);
+  matchFixtureSelect.innerHTML = matches.length
+    ? matches
+        .map((match, index) => {
+          const homeClub = getClubById(match.homeId);
+          const awayClub = getClubById(match.awayId);
+          return `<option value="${index}">${escapeHtml(homeClub?.name || "Por definir")} vs ${escapeHtml(awayClub?.name || "Por definir")}</option>`;
+        })
+        .join("")
+    : '<option value="">Sin partidos</option>';
+
+  if (selectedMatch && matches[Number(selectedMatch)]) {
+    matchFixtureSelect.value = selectedMatch;
+  } else if (matches.length) {
+    matchFixtureSelect.value = "0";
+  }
+
+  fillMatchForm();
+}
+
 function populateEditorSelects() {
   const selectedClub = clubEditorSelect.value;
   const selectedPlayer = playerEditorSelect.value;
@@ -822,6 +991,7 @@ function populateEditorSelects() {
 
   fillClubForm();
   fillPlayerForm();
+  populateMatchEditor();
 }
 
 function setSaveStatus(message, tone = "neutral") {
@@ -852,7 +1022,7 @@ function setEditorState() {
 
   if (state.user && state.canEdit) {
     authStatus.textContent = "Editor conectado";
-    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes y jugadores desde esta web.";
+    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes, jugadores y partidos desde esta web.";
     editorBadge.textContent = "Permiso de edicion activo";
     editorBadge.className = "access-badge success";
     editorPanel.classList.remove("hidden");
@@ -885,7 +1055,7 @@ function setEditorState() {
   }
 
   editorPanelNote.textContent =
-    "Los cambios se guardan en Firestore para que GitHub Pages y la APK conectada los lean al abrirse.";
+    "Los cambios se guardan en Firestore para que la web y la APK conectada lean resultados, goles y asistencias al abrirse.";
 }
 
 function renderAll() {
@@ -1040,6 +1210,67 @@ async function handlePlayerSubmit(event) {
   await saveCurrentLeague(`Jugador ${player.name}`);
 }
 
+async function handleMatchSubmit(event) {
+  event.preventDefault();
+
+  const { roundNumber, leg, matchIndex, match } = getSelectedScheduleMatch();
+  if (!match) {
+    setSaveStatus("No hay un partido valido seleccionado para guardar.", "warning");
+    return;
+  }
+
+  const homeClub = getClubById(match.homeId);
+  const awayClub = getClubById(match.awayId);
+  const scorers = parseDetailLines(matchGoalsDetailsInput.value);
+  const assists = parseDetailLines(matchAssistsDetailsInput.value);
+  const status = getStatusLabel(matchStatusSelect.value);
+  const homeGoals = numberValue(matchHomeGoalsInput.value);
+  const awayGoals = numberValue(matchAwayGoalsInput.value);
+  const existingIndex = state.matches.findIndex((item) =>
+    numberValue(item.round) === roundNumber &&
+    String(item.leg || "").toLowerCase() === leg &&
+    item.homeId === match.homeId &&
+    item.awayId === match.awayId
+  );
+
+  const shouldClear =
+    status === "Pendiente" &&
+    homeGoals === 0 &&
+    awayGoals === 0 &&
+    !scorers.length &&
+    !assists.length;
+
+  if (shouldClear) {
+    if (existingIndex >= 0) {
+      state.matches.splice(existingIndex, 1);
+    }
+  } else {
+    const payload = normalizeMatch({
+      round: roundNumber,
+      leg,
+      matchIndex,
+      homeId: match.homeId,
+      awayId: match.awayId,
+      homeGoals,
+      awayGoals,
+      status,
+      scorers,
+      assists,
+      highlights: composeMatchHighlights(scorers, assists),
+    });
+
+    if (existingIndex >= 0) {
+      state.matches.splice(existingIndex, 1, payload);
+    } else {
+      state.matches.push(payload);
+    }
+  }
+
+  state.meta.updatedAt = todayIsoLocal();
+  renderAll();
+  await saveCurrentLeague(`Partido ${homeClub?.name || "Local"} vs ${awayClub?.name || "Visitante"}`);
+}
+
 function handleDownloadJson() {
   const payload = buildLeagueDataForSave();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1064,8 +1295,12 @@ function setupFilters() {
 function setupEditors() {
   clubEditorSelect.addEventListener("change", fillClubForm);
   playerEditorSelect.addEventListener("change", fillPlayerForm);
+  matchRoundSelect.addEventListener("change", populateMatchEditor);
+  matchLegSelect.addEventListener("change", populateMatchEditor);
+  matchFixtureSelect.addEventListener("change", fillMatchForm);
   clubEditorForm.addEventListener("submit", handleClubSubmit);
   playerEditorForm.addEventListener("submit", handlePlayerSubmit);
+  matchEditorForm.addEventListener("submit", handleMatchSubmit);
   downloadJsonButton.addEventListener("click", handleDownloadJson);
 }
 
