@@ -481,10 +481,10 @@ function renderMeta() {
   brandRegion.textContent = `${region} - ${game}`;
   seasonBadge.textContent = state.meta.season || "Season 01";
 
-  heroTitle.textContent = `${shortBrand} para competir con presencia internacional.`;
+  heroTitle.textContent = "𝗟𝗜𝗚𝗔 𝗦𝗖𝗖 | 𝗖𝗼𝗺𝗽𝗲𝘁𝗶𝘁𝗶𝘃𝗶𝗱𝗮𝗱 𝗮𝗹 𝗺á𝘅𝗶𝗺𝗼";
   heroDescription.textContent =
     `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con resultados, ` +
-    "estadisticas y mercado de fichajes en una identidad sobria y elegante.";
+    "estadisticas y mercado de fichajes dentro de una experiencia negra, elegante y pensada para web y app.";
   heroBadges.innerHTML = [region, game, mode]
     .map((label) => `<span class="signal-pill">${escapeHtml(label)}</span>`)
     .join("");

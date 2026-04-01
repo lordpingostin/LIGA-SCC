@@ -9,51 +9,83 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#0A0A0A"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:padding="24dp">
+        android:background="#050505">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:letterSpacing="0.22"
-            android:text="LIGA SCC"
-            android:textAllCaps="true"
-            android:textColor="#F5F3EF"
-            android:textSize="34sp"
-            android:textStyle="bold" />
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0.82"
+            android:contentDescription="@string/app_name"
+            android:scaleType="centerCrop"
+            android:src="@drawable/liga_scc_splash" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp"
-            android:letterSpacing="0.18"
-            android:text="FC26 VIRTUAL LEAGUE"
-            android:textAllCaps="true"
-            android:textColor="#B9B1A5"
-            android:textSize="12sp" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#7A050505" />
 
-        <ProgressBar
-            android:id="@+id/loadingBar"
-            style="?android:attr/progressBarStyleLarge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:indeterminate="true" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="28dp">
 
-        <TextView
-            android:id="@+id/loadingText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Cargando LIGA SCC..."
-            android:textColor="#F5F3EF"
-            android:textSize="16sp" />
-    </LinearLayout>
+            <ImageView
+                android:id="@+id/loadingLogo"
+                android:layout_width="210dp"
+                android:layout_height="210dp"
+                android:adjustViewBounds="true"
+                android:background="#22000000"
+                android:contentDescription="@string/app_name"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/liga_scc_logo" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:gravity="center"
+                android:letterSpacing="0.08"
+                android:text="LIGA SCC"
+                android:textAllCaps="true"
+                android:textColor="#F5F3EF"
+                android:textSize="30sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="24dp"
+                android:gravity="center"
+                android:letterSpacing="0.08"
+                android:text="COMPETITIVIDAD AL MAXIMO"
+                android:textAllCaps="true"
+                android:textColor="#E1DCD4"
+                android:textSize="12sp" />
+
+            <ProgressBar
+                android:id="@+id/loadingBar"
+                style="?android:attr/progressBarStyleLarge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:indeterminate="true" />
+
+            <TextView
+                android:id="@+id/loadingText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="Cargando LIGA SCC..."
+                android:textColor="#F5F3EF"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </FrameLayout>
 
 </FrameLayout>
