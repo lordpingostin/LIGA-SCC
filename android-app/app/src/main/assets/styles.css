@@ -1110,6 +1110,47 @@ tbody tr:hover {
   font-size: 1.15rem;
 }
 
+.schedule-time-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 12px;
+}
+
+.schedule-time-card {
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(7, 7, 7, 0.34);
+  backdrop-filter: blur(12px);
+}
+
+.schedule-time-card.official {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.schedule-time-card span,
+.schedule-time-card strong,
+.schedule-time-card small {
+  display: block;
+}
+
+.schedule-time-card span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  margin-bottom: 8px;
+}
+
+.schedule-time-card strong {
+  font-size: 1.42rem;
+  margin-bottom: 8px;
+}
+
+.schedule-time-card small {
+  color: var(--accent-warm);
+  line-height: 1.45;
+}
+
 .fixtures-filter {
   max-width: 260px;
   padding: 16px 18px;

@@ -23,6 +23,7 @@ const fixtureRoundFilter = document.getElementById("fixtureRoundFilter");
 const fixturesSummary = document.getElementById("fixturesSummary");
 const scheduleWindowTitle = document.getElementById("scheduleWindowTitle");
 const scheduleWindowText = document.getElementById("scheduleWindowText");
+const scheduleTimeGrid = document.getElementById("scheduleTimeGrid");
 const clubCards = document.getElementById("clubCards");
 const playersTableBody = document.getElementById("playersTableBody");
 const playerSearch = document.getElementById("playerSearch");
@@ -126,6 +127,16 @@ const state = {
   transferRequestsUnsubscribe: null,
   marketClock: null,
 };
+
+const LIVE_SCHEDULE_ZONES = [
+  { label: "Colombia", timeZone: "America/Bogota", isOfficial: false },
+  { label: "Honduras", timeZone: "America/Tegucigalpa", isOfficial: false },
+  { label: "Mexico", timeZone: "America/Mexico_City", isOfficial: false },
+  { label: "Peru", timeZone: "America/Lima", isOfficial: false },
+  { label: "Chile", timeZone: "America/Santiago", isOfficial: true },
+  { label: "Argentina", timeZone: "America/Argentina/Buenos_Aires", isOfficial: true },
+  { label: "Uruguay", timeZone: "America/Montevideo", isOfficial: true },
+];
 
 function deepClone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -268,6 +279,121 @@ function getScheduleWindowInfo() {
     title: `Rango oficial de inicio: ${start} a ${end}`,
     text: `Partidos habilitados entre ${start} y ${end} para ${zones.join(", ")}.`,
   };
+}
+
+function getTimeZoneParts(date, timeZone) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  });
+
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(date)
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+  };
+}
+
+function getTimeZoneOffsetMinutes(date, timeZone) {
+  const parts = getTimeZoneParts(date, timeZone);
+  const utcTimestamp = Date.UTC(
+    parts.year,
+    parts.month - 1,
+    parts.day,
+    parts.hour,
+    parts.minute,
+    parts.second
+  );
+
+  return (utcTimestamp - date.getTime()) / 60000;
+}
+
+function zonedDateToUtc(parts, timeZone) {
+  const baseUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, 0);
+  const probe = new Date(baseUtc);
+  const offsetMinutes = getTimeZoneOffsetMinutes(probe, timeZone);
+  return new Date(baseUtc - offsetMinutes * 60000);
+}
+
+function formatTimeInZone(date, timeZone) {
+  return new Intl.DateTimeFormat("es-419", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}
+
+function getLiveScheduleEntries() {
+  const scheduleWindow = getScheduleWindowInfo();
+  const officialZone = "America/Santiago";
+  const now = new Date();
+  const officialToday = getTimeZoneParts(now, officialZone);
+  const [startHour, startMinute] = scheduleWindow.start.split(":").map(Number);
+  const [endHour, endMinute] = scheduleWindow.end.split(":").map(Number);
+
+  const startUtc = zonedDateToUtc(
+    {
+      year: officialToday.year,
+      month: officialToday.month,
+      day: officialToday.day,
+      hour: startHour,
+      minute: startMinute,
+    },
+    officialZone
+  );
+
+  const endUtc = zonedDateToUtc(
+    {
+      year: officialToday.year,
+      month: officialToday.month,
+      day: officialToday.day,
+      hour: endHour,
+      minute: endMinute,
+    },
+    officialZone
+  );
+
+  return LIVE_SCHEDULE_ZONES.map((zone) => ({
+    ...zone,
+    currentTime: formatTimeInZone(now, zone.timeZone),
+    window: `${formatTimeInZone(startUtc, zone.timeZone)} - ${formatTimeInZone(endUtc, zone.timeZone)}`,
+  }));
+}
+
+function renderLiveScheduleClocks() {
+  if (!scheduleTimeGrid) {
+    return;
+  }
+
+  const entries = getLiveScheduleEntries();
+  scheduleTimeGrid.innerHTML = entries
+    .map(
+      (entry) => `
+        <article class="schedule-time-card${entry.isOfficial ? " official" : ""}">
+          <span>${entry.label}</span>
+          <strong>${entry.currentTime}</strong>
+          <small>Rango guia: ${entry.window}</small>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function normalizeClub(club = {}) {
@@ -505,6 +631,7 @@ function renderMeta() {
   modeLabel.textContent = mode;
   scheduleWindowTitle.textContent = scheduleWindow.title;
   scheduleWindowText.textContent = scheduleWindow.text;
+  renderLiveScheduleClocks();
 
   footerBrand.textContent = shortBrand;
   footerRegion.textContent = `${region} - ${mode} - ${game}`;
@@ -1585,6 +1712,7 @@ function setupMarketClock() {
   state.marketClock = window.setInterval(() => {
     renderTransferMarket();
     renderCommandCenter();
+    renderLiveScheduleClocks();
   }, 60000);
 }
 
