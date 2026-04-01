@@ -471,19 +471,20 @@ function generateRoundRobinSchedule(clubs) {
 }
 function renderMeta() {
   const leagueName = state.meta.leagueName || "SCC FC26 Virtual League";
+  const shortBrand = state.meta.shortName ? `LIGA ${state.meta.shortName}` : "LIGA SCC";
   const region = state.meta.region || "Global";
   const game = state.meta.game || "EA SPORTS FC 26";
   const mode = state.meta.mode || "Clubs Pro";
   const scheduleWindow = getScheduleWindowInfo();
 
-  brandName.textContent = leagueName;
+  brandName.textContent = shortBrand;
   brandRegion.textContent = `${region} - ${game}`;
   seasonBadge.textContent = state.meta.season || "Season 01";
 
-  heroTitle.textContent = `${leagueName} para competir desde cualquier pais.`;
+  heroTitle.textContent = `${shortBrand} para competir con presencia internacional.`;
   heroDescription.textContent =
-    `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con estadisticas, ` +
-    "resultados y edicion colaborativa con Google.";
+    `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con resultados, ` +
+    "estadisticas y mercado de fichajes en una identidad sobria y elegante.";
   heroBadges.innerHTML = [region, game, mode]
     .map((label) => `<span class="signal-pill">${escapeHtml(label)}</span>`)
     .join("");
@@ -502,7 +503,7 @@ function renderMeta() {
   scheduleWindowTitle.textContent = scheduleWindow.title;
   scheduleWindowText.textContent = scheduleWindow.text;
 
-  footerBrand.textContent = leagueName;
+  footerBrand.textContent = shortBrand;
   footerRegion.textContent = `${region} - ${mode} - ${game}`;
   footerUpdate.textContent = `Ultima actualizacion: ${formatDate(state.meta.updatedAt)}`;
 }

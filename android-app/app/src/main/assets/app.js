@@ -1,10 +1,12 @@
-﻿import {
+import {
+  createTransferRequest,
   getFirebaseSetup,
   initFirebase,
   isEditor,
   saveLeagueData,
   signInWithGoogle,
   signOutUser,
+  subscribeTransferRequests,
 } from "./firebase-service.js";
 
 const DATA_PATH = "league-data.json";
@@ -19,6 +21,8 @@ const leaderboards = document.getElementById("leaderboards");
 const fixturesGrid = document.getElementById("fixturesGrid");
 const fixtureRoundFilter = document.getElementById("fixtureRoundFilter");
 const fixturesSummary = document.getElementById("fixturesSummary");
+const scheduleWindowTitle = document.getElementById("scheduleWindowTitle");
+const scheduleWindowText = document.getElementById("scheduleWindowText");
 const clubCards = document.getElementById("clubCards");
 const playersTableBody = document.getElementById("playersTableBody");
 const playerSearch = document.getElementById("playerSearch");
@@ -74,6 +78,34 @@ const playerMvpsInput = document.getElementById("playerMvpsInput");
 const playerCleanSheetsInput = document.getElementById("playerCleanSheetsInput");
 const playerSavesInput = document.getElementById("playerSavesInput");
 const playerRatingInput = document.getElementById("playerRatingInput");
+const matchEditorForm = document.getElementById("matchEditorForm");
+const matchRoundSelect = document.getElementById("matchRoundSelect");
+const matchLegSelect = document.getElementById("matchLegSelect");
+const matchFixtureSelect = document.getElementById("matchFixtureSelect");
+const matchHomeTeamInput = document.getElementById("matchHomeTeamInput");
+const matchAwayTeamInput = document.getElementById("matchAwayTeamInput");
+const matchStatusSelect = document.getElementById("matchStatusSelect");
+const matchHomeGoalsInput = document.getElementById("matchHomeGoalsInput");
+const matchAwayGoalsInput = document.getElementById("matchAwayGoalsInput");
+const matchGoalsDetailsInput = document.getElementById("matchGoalsDetailsInput");
+const matchAssistsDetailsInput = document.getElementById("matchAssistsDetailsInput");
+const marketSettingsForm = document.getElementById("marketSettingsForm");
+const marketModeSelect = document.getElementById("marketModeSelect");
+const marketManualStatusSelect = document.getElementById("marketManualStatusSelect");
+const transferRequestsCount = document.getElementById("transferRequestsCount");
+const transferRequestsList = document.getElementById("transferRequestsList");
+const transferMarketSummary = document.getElementById("transferMarketSummary");
+const marketStatusLabel = document.getElementById("marketStatusLabel");
+const marketModeLabel = document.getElementById("marketModeLabel");
+const marketChileTimeLabel = document.getElementById("marketChileTimeLabel");
+const marketWindowLabel = document.getElementById("marketWindowLabel");
+const marketHelpText = document.getElementById("marketHelpText");
+const transferMarketForm = document.getElementById("transferMarketForm");
+const transferPlayerIdInput = document.getElementById("transferPlayerIdInput");
+const transferPositionInput = document.getElementById("transferPositionInput");
+const transferPhoneInput = document.getElementById("transferPhoneInput");
+const transferSubmitButton = document.getElementById("transferSubmitButton");
+const transferSubmitStatus = document.getElementById("transferSubmitStatus");
 const downloadJsonButton = document.getElementById("downloadJsonButton");
 const saveStatus = document.getElementById("saveStatus");
 
@@ -84,12 +116,15 @@ const state = {
   players: [],
   matches: [],
   schedule: [],
+  transferRequests: [],
   user: null,
   canEdit: false,
   sourceLabel: "JSON publico",
   firebaseStatus: "disabled",
   firebaseSetup: getFirebaseSetup(),
   revealObserver: null,
+  transferRequestsUnsubscribe: null,
+  marketClock: null,
 };
 
 function deepClone(value) {
@@ -135,6 +170,106 @@ function formatDate(value) {
   }).format(parsed);
 }
 
+function formatDateTime(value) {
+  if (!value) {
+    return "Pendiente";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
+function getTransferMarketConfig() {
+  const market = state.meta.transferMarket || {};
+  return {
+    mode: market.mode === "manual" ? "manual" : "automatic",
+    manualStatus: market.manualStatus === "open" ? "open" : "closed",
+    timezone: market.timezone || "America/Santiago",
+    automaticWindowLabel: market.automaticWindowLabel || "Sabado desde las 00:00 hora Chile",
+  };
+}
+
+function getChileNowParts() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: getTransferMarketConfig().timezone,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(new Date())
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+  return {
+    weekday: parts.weekday || "Mon",
+    year: parts.year || "0000",
+    month: parts.month || "00",
+    day: parts.day || "00",
+    hour: parts.hour || "00",
+    minute: parts.minute || "00",
+    second: parts.second || "00",
+  };
+}
+
+function getTransferMarketState() {
+  const config = getTransferMarketConfig();
+  const chileNow = getChileNowParts();
+  const currentTime = `${chileNow.hour}:${chileNow.minute}`;
+  const automaticOpen = chileNow.weekday === "Sat";
+  const isOpen = config.mode === "manual" ? config.manualStatus === "open" : automaticOpen;
+
+  return {
+    ...config,
+    isOpen,
+    currentTime,
+    currentWeekday: chileNow.weekday,
+    statusLabel: isOpen ? "Mercado abierto" : "Mercado cerrado",
+    modeLabel: config.mode === "manual" ? "Manual" : "Automatico",
+    helpText:
+      config.mode === "manual"
+        ? `Modo manual activo. El mercado esta ${config.manualStatus === "open" ? "abierto" : "cerrado"} por decision administrativa.`
+        : "Modo automatico activo. Se habilita cada sabado a las 00:00 hora Chile y permanece abierto durante el sabado.",
+  };
+}
+
+function getScheduleWindowInfo() {
+  const scheduleWindow = state.meta.scheduleWindow || {};
+  const start = String(scheduleWindow.start || "18:00");
+  const end = String(scheduleWindow.end || "23:30");
+  const zones = Array.isArray(scheduleWindow.zones) && scheduleWindow.zones.length
+    ? scheduleWindow.zones
+    : ["Argentina", "Chile", "Uruguay"];
+
+  return {
+    start,
+    end,
+    zones,
+    zoneLabel: zones.join(", "),
+    shortLabel: `${start} a ${end}`,
+    title: `Rango oficial de inicio: ${start} a ${end}`,
+    text: `Partidos habilitados entre ${start} y ${end} para ${zones.join(", ")}.`,
+  };
+}
+
 function normalizeClub(club = {}) {
   return {
     ...club,
@@ -162,6 +297,20 @@ function normalizePlayer(player = {}) {
   };
 }
 
+function normalizeMatch(match = {}) {
+  return {
+    ...match,
+    round: numberValue(match.round),
+    matchIndex: numberValue(match.matchIndex),
+    homeGoals: numberValue(match.homeGoals),
+    awayGoals: numberValue(match.awayGoals),
+    status: match.status || "Pendiente",
+    scorers: Array.isArray(match.scorers) ? match.scorers : [],
+    assists: Array.isArray(match.assists) ? match.assists : [],
+    highlights: Array.isArray(match.highlights) ? match.highlights : [],
+  };
+}
+
 function normalizeLeagueData(data = {}) {
   const normalized = deepClone(data || {});
 
@@ -176,6 +325,12 @@ function normalizeLeagueData(data = {}) {
     mode: "Clubs Pro",
     format: "Liga internacional",
     countries: [],
+    transferMarket: {
+      mode: "automatic",
+      manualStatus: "closed",
+      timezone: "America/Santiago",
+      automaticWindowLabel: "Sabado desde las 00:00 hora Chile",
+    },
     ...(normalized.meta || {}),
     admin: FIXED_ADMIN,
   };
@@ -183,7 +338,7 @@ function normalizeLeagueData(data = {}) {
   normalized.moderators = Array.isArray(normalized.moderators) ? normalized.moderators : [];
   normalized.clubs = Array.isArray(normalized.clubs) ? normalized.clubs.map(normalizeClub) : [];
   normalized.players = Array.isArray(normalized.players) ? normalized.players.map(normalizePlayer) : [];
-  normalized.matches = Array.isArray(normalized.matches) ? normalized.matches : [];
+  normalized.matches = Array.isArray(normalized.matches) ? normalized.matches.map(normalizeMatch) : [];
 
   return normalized;
 }
@@ -316,18 +471,20 @@ function generateRoundRobinSchedule(clubs) {
 }
 function renderMeta() {
   const leagueName = state.meta.leagueName || "SCC FC26 Virtual League";
+  const shortBrand = state.meta.shortName ? `LIGA ${state.meta.shortName}` : "LIGA SCC";
   const region = state.meta.region || "Global";
   const game = state.meta.game || "EA SPORTS FC 26";
   const mode = state.meta.mode || "Clubs Pro";
+  const scheduleWindow = getScheduleWindowInfo();
 
-  brandName.textContent = leagueName;
+  brandName.textContent = shortBrand;
   brandRegion.textContent = `${region} - ${game}`;
   seasonBadge.textContent = state.meta.season || "Season 01";
 
-  heroTitle.textContent = `${leagueName} para competir desde cualquier pais.`;
+  heroTitle.textContent = `${shortBrand} para competir con presencia internacional.`;
   heroDescription.textContent =
-    `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con estadisticas, ` +
-    "resultados y edicion colaborativa con Google.";
+    `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con resultados, ` +
+    "estadisticas y mercado de fichajes en una identidad sobria y elegante.";
   heroBadges.innerHTML = [region, game, mode]
     .map((label) => `<span class="signal-pill">${escapeHtml(label)}</span>`)
     .join("");
@@ -343,8 +500,10 @@ function renderMeta() {
   formatLabel.textContent = state.meta.format || "Liga internacional";
   gameLabel.textContent = game;
   modeLabel.textContent = mode;
+  scheduleWindowTitle.textContent = scheduleWindow.title;
+  scheduleWindowText.textContent = scheduleWindow.text;
 
-  footerBrand.textContent = leagueName;
+  footerBrand.textContent = shortBrand;
   footerRegion.textContent = `${region} - ${mode} - ${game}`;
   footerUpdate.textContent = `Ultima actualizacion: ${formatDate(state.meta.updatedAt)}`;
 }
@@ -380,10 +539,14 @@ function renderSummary() {
 }
 
 function renderCommandCenter() {
+  const scheduleWindow = getScheduleWindowInfo();
+  const transferMarket = getTransferMarketState();
   const items = [
     { label: "Cobertura", value: `${getCountryCount()} paises listados` },
     { label: "Temporada", value: state.meta.season || "Season 01" },
     { label: "Calendario", value: `${state.schedule.length} fechas ida y ${state.schedule.length} vuelta` },
+    { label: "Horario oficial", value: `${scheduleWindow.shortLabel} (${scheduleWindow.zoneLabel})` },
+    { label: "Mercado", value: `${transferMarket.statusLabel} - ${transferMarket.modeLabel}` },
     { label: "Fuente", value: state.sourceLabel },
   ];
 
@@ -426,6 +589,63 @@ function renderCommandCenter() {
     `${state.meta.leagueName || "SCC"} reune ${state.clubs.length} clubes, ${state.players.length} jugadores, ` +
     `${getScheduledMatchCount()} partidos programados, ${getCompletedMatchCount()} ya jugados y ` +
     `${state.firebaseSetup.editorEmails.length} correos listos para edicion compartida.`;
+}
+
+function renderTransferMarket() {
+  const market = getTransferMarketState();
+  const formEnabled = state.firebaseSetup.enabled && market.isOpen;
+
+  marketStatusLabel.textContent = market.statusLabel;
+  marketModeLabel.textContent = market.modeLabel;
+  marketChileTimeLabel.textContent = `${market.currentTime} (${market.currentWeekday})`;
+  marketWindowLabel.textContent = market.automaticWindowLabel;
+  marketHelpText.textContent = market.helpText;
+  transferMarketSummary.textContent =
+    "Los administradores pueden abrir o cerrar el mercado manualmente, o dejarlo automatico cada sabado a las 00:00 hora Chile.";
+
+  transferPlayerIdInput.disabled = !formEnabled;
+  transferPositionInput.disabled = !formEnabled;
+  transferPhoneInput.disabled = !formEnabled;
+  transferSubmitButton.disabled = !formEnabled;
+
+  if (!state.firebaseSetup.enabled) {
+    transferSubmitStatus.textContent = "Firebase no esta disponible para recibir inscripciones.";
+    transferSubmitStatus.className = "save-status warning";
+  } else if (market.isOpen) {
+    transferSubmitStatus.textContent = "Mercado habilitado. Puedes enviar tu inscripcion.";
+    transferSubmitStatus.className = "save-status success";
+  } else {
+    transferSubmitStatus.textContent = "Mercado cerrado por ahora. Espera la apertura o un cambio de los administradores.";
+    transferSubmitStatus.className = "save-status warning";
+  }
+}
+
+function renderTransferRequests() {
+  const count = state.transferRequests.length;
+  transferRequestsCount.textContent = `${count} inscripciones registradas.`;
+
+  if (!count) {
+    transferRequestsList.innerHTML = '<p class="panel-copy">Todavia no hay solicitudes de fichajes.</p>';
+    return;
+  }
+
+  transferRequestsList.innerHTML = state.transferRequests
+    .map(
+      (request) => `
+        <article class="transfer-request-item">
+          <div>
+            <strong>${escapeHtml(request.playerId || "Sin ID")}</strong>
+            <p>Posicion: ${escapeHtml(request.position || "Por definir")}</p>
+            <p>Telefono: ${escapeHtml(request.phone || "Sin telefono")}</p>
+          </div>
+          <div class="transfer-request-meta">
+            <span class="access-badge neutral">${escapeHtml(request.status || "Pendiente")}</span>
+            <small>${escapeHtml(formatDateTime(request.submittedAt))}</small>
+          </div>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function renderStandings() {
@@ -528,13 +748,90 @@ function getMatchResult(roundNumber, leg, homeId, awayId) {
   );
 }
 
+function parseDetailLines(value) {
+  return String(value || "")
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function composeMatchHighlights(scorers, assists) {
+  return [
+    ...scorers.map((item) => `Gol: ${item}`),
+    ...assists.map((item) => `Asistencia: ${item}`),
+  ];
+}
+
+function getScheduledMatches(roundNumber, leg) {
+  const round = state.schedule.find((item) => item.fecha === numberValue(roundNumber));
+  if (!round) {
+    return [];
+  }
+
+  return String(leg).toLowerCase() === "vuelta" ? round.vuelta : round.ida;
+}
+
+function getSelectedScheduleMatch() {
+  const roundNumber = numberValue(matchRoundSelect.value);
+  const leg = String(matchLegSelect.value || "ida").toLowerCase();
+  const matchIndex = numberValue(matchFixtureSelect.value);
+  const matches = getScheduledMatches(roundNumber, leg);
+  return {
+    roundNumber,
+    leg,
+    matchIndex,
+    match: matches[matchIndex] || null,
+  };
+}
+
+function getStatusLabel(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "final") {
+    return "Final";
+  }
+  if (normalized === "aplazado") {
+    return "Aplazado";
+  }
+  return "Pendiente";
+}
+
+function getStatusValue(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "aplazado") {
+    return "aplazado";
+  }
+  if (normalized === "final") {
+    return "final";
+  }
+  return "pendiente";
+}
+
+function renderFixtureDetailGroup(title, items) {
+  if (!items.length) {
+    return "";
+  }
+
+  return `
+    <div class="fixture-detail-group">
+      <span>${escapeHtml(title)}</span>
+      <ul class="fixture-detail-list">
+        ${items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    </div>
+  `;
+}
+
 function renderFixtureList(matches, roundNumber, leg) {
   return matches
     .map((match, index) => {
       const homeClub = getClubById(match.homeId);
       const awayClub = getClubById(match.awayId);
       const result = getMatchResult(roundNumber, leg, match.homeId, match.awayId);
-      const highlights = Array.isArray(result?.highlights) ? result.highlights : [];
+      const scorers = Array.isArray(result?.scorers) ? result.scorers : [];
+      const assists = Array.isArray(result?.assists) ? result.assists : [];
+      const highlights = Array.isArray(result?.highlights)
+        ? result.highlights.filter((item) => !/^Gol: |^Asistencia: /i.test(String(item)))
+        : [];
 
       return `
         <li class="fixture-item">
@@ -548,6 +845,8 @@ function renderFixtureList(matches, roundNumber, leg) {
                   <span class="fixture-score">${numberValue(result.homeGoals)} - ${numberValue(result.awayGoals)}</span>
                   <span class="fixture-status">${escapeHtml(result.status || "Final")}</span>
                 </div>
+                ${renderFixtureDetailGroup("Goles", scorers)}
+                ${renderFixtureDetailGroup("Asistencias", assists)}
                 ${
                   highlights.length
                     ? `<ul class="fixture-highlights">${highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
@@ -568,6 +867,7 @@ function renderFixtures() {
     return;
   }
 
+  const scheduleWindow = getScheduleWindowInfo();
   const selectedRound = numberValue(fixtureRoundFilter.value);
   const roundsToRender = selectedRound
     ? state.schedule.filter((round) => round.fecha === selectedRound)
@@ -575,7 +875,7 @@ function renderFixtures() {
 
   fixturesSummary.textContent =
     `${state.schedule.length} fechas base, ${state.schedule.length * 2} jornadas totales y ` +
-    `${getScheduledMatchCount()} partidos programados.`;
+    `${getScheduledMatchCount()} partidos programados. Horario oficial: ${scheduleWindow.shortLabel} (${scheduleWindow.zoneLabel}).`;
 
   if (!roundsToRender.length) {
     fixturesGrid.innerHTML = emptyStateTemplate.innerHTML;
@@ -774,6 +1074,82 @@ function fillPlayerForm() {
   playerRatingInput.value = numberValue(player.rating).toFixed(1);
 }
 
+function fillMatchForm() {
+  const { roundNumber, leg, matchIndex, match } = getSelectedScheduleMatch();
+  if (!match) {
+    matchFixtureSelect.innerHTML = '<option value="">Sin partidos</option>';
+    matchHomeTeamInput.value = "";
+    matchAwayTeamInput.value = "";
+    matchStatusSelect.value = "pendiente";
+    matchHomeGoalsInput.value = 0;
+    matchAwayGoalsInput.value = 0;
+    matchGoalsDetailsInput.value = "";
+    matchAssistsDetailsInput.value = "";
+    return;
+  }
+
+  const result = getMatchResult(roundNumber, leg, match.homeId, match.awayId);
+  const homeClub = getClubById(match.homeId);
+  const awayClub = getClubById(match.awayId);
+
+  matchFixtureSelect.value = `${matchIndex}`;
+  matchHomeTeamInput.value = homeClub?.name || "Por definir";
+  matchAwayTeamInput.value = awayClub?.name || "Por definir";
+  matchStatusSelect.value = getStatusValue(result?.status);
+  matchHomeGoalsInput.value = result ? numberValue(result.homeGoals) : 0;
+  matchAwayGoalsInput.value = result ? numberValue(result.awayGoals) : 0;
+  matchGoalsDetailsInput.value = Array.isArray(result?.scorers) ? result.scorers.join("\n") : "";
+  matchAssistsDetailsInput.value = Array.isArray(result?.assists) ? result.assists.join("\n") : "";
+}
+
+function populateMatchEditor() {
+  const selectedRound = matchRoundSelect.value;
+  const selectedLeg = matchLegSelect.value || "ida";
+  const selectedMatch = matchFixtureSelect.value;
+
+  matchRoundSelect.innerHTML = state.schedule
+    .map((round) => `<option value="${round.fecha}">Fecha ${round.fecha}</option>`)
+    .join("");
+
+  if (selectedRound && state.schedule.some((round) => String(round.fecha) === selectedRound)) {
+    matchRoundSelect.value = selectedRound;
+  } else if (state.schedule[0]) {
+    matchRoundSelect.value = `${state.schedule[0].fecha}`;
+  }
+
+  matchLegSelect.value = selectedLeg;
+
+  const matches = getScheduledMatches(matchRoundSelect.value, matchLegSelect.value);
+  matchFixtureSelect.innerHTML = matches.length
+    ? matches
+        .map((match, index) => {
+          const homeClub = getClubById(match.homeId);
+          const awayClub = getClubById(match.awayId);
+          return `<option value="${index}">${escapeHtml(homeClub?.name || "Por definir")} vs ${escapeHtml(awayClub?.name || "Por definir")}</option>`;
+        })
+        .join("")
+    : '<option value="">Sin partidos</option>';
+
+  if (selectedMatch && matches[Number(selectedMatch)]) {
+    matchFixtureSelect.value = selectedMatch;
+  } else if (matches.length) {
+    matchFixtureSelect.value = "0";
+  }
+
+  fillMatchForm();
+}
+
+function fillMarketSettingsForm() {
+  const market = getTransferMarketConfig();
+  marketModeSelect.value = market.mode;
+  marketManualStatusSelect.value = market.manualStatus;
+  marketManualStatusSelect.disabled = market.mode !== "manual";
+}
+
+function syncMarketModeControls() {
+  marketManualStatusSelect.disabled = marketModeSelect.value !== "manual";
+}
+
 function populateEditorSelects() {
   const selectedClub = clubEditorSelect.value;
   const selectedPlayer = playerEditorSelect.value;
@@ -795,6 +1171,8 @@ function populateEditorSelects() {
 
   fillClubForm();
   fillPlayerForm();
+  populateMatchEditor();
+  fillMarketSettingsForm();
 }
 
 function setSaveStatus(message, tone = "neutral") {
@@ -825,7 +1203,7 @@ function setEditorState() {
 
   if (state.user && state.canEdit) {
     authStatus.textContent = "Editor conectado";
-    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes y jugadores desde esta web.";
+    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes, jugadores, partidos y mercado de fichajes desde esta web.";
     editorBadge.textContent = "Permiso de edicion activo";
     editorBadge.className = "access-badge success";
     editorPanel.classList.remove("hidden");
@@ -858,13 +1236,15 @@ function setEditorState() {
   }
 
   editorPanelNote.textContent =
-    "Los cambios se guardan en Firestore para que GitHub Pages y la APK conectada los lean al abrirse.";
+    "Los cambios se guardan en Firestore para que la web y la APK conectada lean resultados, goles, asistencias y mercado al abrirse.";
 }
 
 function renderAll() {
   renderMeta();
   renderSummary();
   renderCommandCenter();
+  renderTransferMarket();
+  renderTransferRequests();
   renderStandings();
   populateFixtureFilter();
   renderFixtures();
@@ -918,7 +1298,9 @@ async function fetchRemoteData() {
     if (!response.ok) {
       return null;
     }
-    return await response.json();
+    const text = await response.text();
+    const cleanText = text.replace(/^\uFEFF/, "");
+    return JSON.parse(cleanText);
   } catch (error) {
     console.warn("No se pudieron cargar datos remotos, usando respaldo local.", error);
     return null;
@@ -1011,6 +1393,123 @@ async function handlePlayerSubmit(event) {
   await saveCurrentLeague(`Jugador ${player.name}`);
 }
 
+async function handleMatchSubmit(event) {
+  event.preventDefault();
+
+  const { roundNumber, leg, matchIndex, match } = getSelectedScheduleMatch();
+  if (!match) {
+    setSaveStatus("No hay un partido valido seleccionado para guardar.", "warning");
+    return;
+  }
+
+  const homeClub = getClubById(match.homeId);
+  const awayClub = getClubById(match.awayId);
+  const scorers = parseDetailLines(matchGoalsDetailsInput.value);
+  const assists = parseDetailLines(matchAssistsDetailsInput.value);
+  const status = getStatusLabel(matchStatusSelect.value);
+  const homeGoals = numberValue(matchHomeGoalsInput.value);
+  const awayGoals = numberValue(matchAwayGoalsInput.value);
+  const existingIndex = state.matches.findIndex((item) =>
+    numberValue(item.round) === roundNumber &&
+    String(item.leg || "").toLowerCase() === leg &&
+    item.homeId === match.homeId &&
+    item.awayId === match.awayId
+  );
+
+  const shouldClear =
+    status === "Pendiente" &&
+    homeGoals === 0 &&
+    awayGoals === 0 &&
+    !scorers.length &&
+    !assists.length;
+
+  if (shouldClear) {
+    if (existingIndex >= 0) {
+      state.matches.splice(existingIndex, 1);
+    }
+  } else {
+    const payload = normalizeMatch({
+      round: roundNumber,
+      leg,
+      matchIndex,
+      homeId: match.homeId,
+      awayId: match.awayId,
+      homeGoals,
+      awayGoals,
+      status,
+      scorers,
+      assists,
+      highlights: composeMatchHighlights(scorers, assists),
+    });
+
+    if (existingIndex >= 0) {
+      state.matches.splice(existingIndex, 1, payload);
+    } else {
+      state.matches.push(payload);
+    }
+  }
+
+  state.meta.updatedAt = todayIsoLocal();
+  renderAll();
+  await saveCurrentLeague(`Partido ${homeClub?.name || "Local"} vs ${awayClub?.name || "Visitante"}`);
+}
+
+function setTransferSubmitStatus(message, tone = "neutral") {
+  transferSubmitStatus.textContent = message;
+  transferSubmitStatus.className = `save-status ${tone}`;
+}
+
+async function handleMarketSettingsSubmit(event) {
+  event.preventDefault();
+
+  state.meta.transferMarket = {
+    ...getTransferMarketConfig(),
+    mode: marketModeSelect.value === "manual" ? "manual" : "automatic",
+    manualStatus: marketManualStatusSelect.value === "open" ? "open" : "closed",
+    timezone: "America/Santiago",
+    automaticWindowLabel: "Sabado desde las 00:00 hora Chile",
+  };
+  state.meta.updatedAt = todayIsoLocal();
+
+  renderAll();
+  await saveCurrentLeague("Mercado de fichajes");
+}
+
+async function handleTransferRequestSubmit(event) {
+  event.preventDefault();
+
+  const market = getTransferMarketState();
+  if (!state.firebaseSetup.enabled) {
+    setTransferSubmitStatus("Firebase no esta disponible para enviar inscripciones.", "error");
+    return;
+  }
+
+  if (!market.isOpen) {
+    setTransferSubmitStatus("El mercado esta cerrado. No se pueden enviar inscripciones por ahora.", "warning");
+    return;
+  }
+
+  const playerId = transferPlayerIdInput.value.trim();
+  const position = transferPositionInput.value.trim();
+  const phone = transferPhoneInput.value.trim();
+
+  if (!playerId || !position || !phone) {
+    setTransferSubmitStatus("Completa ID, posicion y numero de telefono para enviar la inscripcion.", "warning");
+    return;
+  }
+
+  setTransferSubmitStatus("Enviando inscripcion al mercado...", "pending");
+
+  try {
+    await createTransferRequest({ playerId, position, phone });
+    transferMarketForm.reset();
+    setTransferSubmitStatus("Inscripcion enviada correctamente. Los administradores ya pueden verla.", "success");
+  } catch (error) {
+    console.error(error);
+    setTransferSubmitStatus("No se pudo enviar la inscripcion. Intenta de nuevo en unos segundos.", "error");
+  }
+}
+
 function handleDownloadJson() {
   const payload = buildLeagueDataForSave();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1035,9 +1534,55 @@ function setupFilters() {
 function setupEditors() {
   clubEditorSelect.addEventListener("change", fillClubForm);
   playerEditorSelect.addEventListener("change", fillPlayerForm);
+  matchRoundSelect.addEventListener("change", populateMatchEditor);
+  matchLegSelect.addEventListener("change", populateMatchEditor);
+  matchFixtureSelect.addEventListener("change", fillMatchForm);
+  marketModeSelect.addEventListener("change", syncMarketModeControls);
   clubEditorForm.addEventListener("submit", handleClubSubmit);
   playerEditorForm.addEventListener("submit", handlePlayerSubmit);
+  matchEditorForm.addEventListener("submit", handleMatchSubmit);
+  marketSettingsForm.addEventListener("submit", handleMarketSettingsSubmit);
+  transferMarketForm.addEventListener("submit", handleTransferRequestSubmit);
   downloadJsonButton.addEventListener("click", handleDownloadJson);
+}
+
+function stopTransferRequestsSubscription() {
+  if (typeof state.transferRequestsUnsubscribe === "function") {
+    state.transferRequestsUnsubscribe();
+  }
+  state.transferRequestsUnsubscribe = null;
+}
+
+function startTransferRequestsSubscription() {
+  stopTransferRequestsSubscription();
+
+  if (!state.firebaseSetup.enabled || !state.canEdit) {
+    state.transferRequests = [];
+    renderTransferRequests();
+    return;
+  }
+
+  state.transferRequestsUnsubscribe = subscribeTransferRequests(
+    (items) => {
+      state.transferRequests = items;
+      renderTransferRequests();
+    },
+    (error) => {
+      console.error(error);
+      transferRequestsList.innerHTML = '<p class="panel-copy">No se pudieron cargar las solicitudes del mercado.</p>';
+    }
+  );
+}
+
+function setupMarketClock() {
+  if (state.marketClock) {
+    window.clearInterval(state.marketClock);
+  }
+
+  state.marketClock = window.setInterval(() => {
+    renderTransferMarket();
+    renderCommandCenter();
+  }, 60000);
 }
 
 function setupAuthButtons() {
@@ -1080,6 +1625,7 @@ async function setupFirebaseIntegration() {
     onUserChange: ({ user, canEdit }) => {
       state.user = user || null;
       state.canEdit = Boolean(canEdit);
+      startTransferRequestsSubscription();
       setEditorState();
     },
     onLeagueData: ({ data, sourceLabel }) => {
@@ -1098,6 +1644,7 @@ function showFatalError(error) {
   clubCards.innerHTML = emptyStateTemplate.innerHTML;
   playersTableBody.innerHTML = createEmptyRow(12);
   leaderboards.innerHTML = emptyStateTemplate.innerHTML;
+  transferRequestsList.innerHTML = emptyStateTemplate.innerHTML;
   footerUpdate.textContent = "No fue posible cargar la informacion del torneo";
   setSaveStatus("No fue posible cargar la informacion del torneo.", "error");
 }
@@ -1105,6 +1652,7 @@ function showFatalError(error) {
 async function init() {
   try {
     setupRevealObserver();
+    setupMarketClock();
     await loadBaseData();
     renderAll();
     setupFilters();

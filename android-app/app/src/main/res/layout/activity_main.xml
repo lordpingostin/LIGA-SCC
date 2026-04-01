@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#050816">
+    android:background="#0A0A0A">
 
     <WebView
         android:id="@+id/mainWebView"
@@ -10,18 +10,34 @@
         android:layout_height="match_parent" />
 
     <LinearLayout
+        android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="#0A0A0A"
         android:gravity="center"
         android:orientation="vertical"
         android:padding="24dp">
 
-        <ImageView
-            android:layout_width="116dp"
-            android:layout_height="116dp"
-            android:layout_marginBottom="20dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/liga_scc_logo" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:letterSpacing="0.22"
+            android:text="LIGA SCC"
+            android:textAllCaps="true"
+            android:textColor="#F5F3EF"
+            android:textSize="34sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp"
+            android:letterSpacing="0.18"
+            android:text="FC26 VIRTUAL LEAGUE"
+            android:textAllCaps="true"
+            android:textColor="#B9B1A5"
+            android:textSize="12sp" />
 
         <ProgressBar
             android:id="@+id/loadingBar"
@@ -35,8 +51,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Cargando COPA SCC..."
-            android:textColor="#E8F0FF"
+            android:text="Cargando LIGA SCC..."
+            android:textColor="#F5F3EF"
             android:textSize="16sp" />
     </LinearLayout>
 

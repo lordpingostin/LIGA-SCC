@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String LOCAL_FALLBACK_URL = "file:///android_asset/index.html";
 
     private WebView webView;
+    private View loadingOverlay;
     private ProgressBar loadingBar;
     private TextView loadingText;
     private boolean usingLocalFallback = false;
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         webView = findViewById(R.id.mainWebView);
+        loadingOverlay = findViewById(R.id.loadingOverlay);
         loadingBar = findViewById(R.id.loadingBar);
         loadingText = findViewById(R.id.loadingText);
 
@@ -64,12 +66,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showLoading(String message) {
+        loadingOverlay.setVisibility(View.VISIBLE);
         loadingBar.setVisibility(View.VISIBLE);
         loadingText.setVisibility(View.VISIBLE);
         loadingText.setText(message);
     }
 
     private void hideLoading() {
+        loadingOverlay.setVisibility(View.GONE);
         loadingBar.setVisibility(View.GONE);
         loadingText.setVisibility(View.GONE);
     }
@@ -99,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         usingLocalFallback = true;
-        showLoading("Abriendo respaldo local de COPA SCC...");
+        showLoading("Abriendo respaldo local de LIGA SCC...");
         webView.loadUrl(LOCAL_FALLBACK_URL);
     }
 
@@ -126,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            showLoading("Cargando COPA SCC...");
+            showLoading("Cargando LIGA SCC...");
         }
 
         @Override

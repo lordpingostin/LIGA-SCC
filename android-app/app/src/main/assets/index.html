@@ -6,8 +6,8 @@
   <title>SCC FC26 Virtual League</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=20260401b">
 </head>
 <body>
   <div class="site-background" aria-hidden="true">
@@ -20,10 +20,10 @@
     <nav class="topbar">
       <a class="brand-lockup" href="#inicio" aria-label="Ir al inicio de SCC">
         <span class="brand-mark">
-          <img src="liga-scc-logo.png" alt="Liga SCC">
+          <span class="brand-mark-text">SCC</span>
         </span>
         <span>
-          <strong id="brandName">SCC FC26 Virtual League</strong>
+          <strong id="brandName">LIGA SCC</strong>
           <small id="brandRegion">Competencia global</small>
         </span>
       </a>
@@ -58,7 +58,10 @@
 
       <div class="hero-stage" data-reveal>
         <div class="hero-stage-panel">
-          <img class="hero-stage-logo" src="liga-scc-logo.png" alt="Logo Liga SCC">
+          <div class="hero-stage-logo" aria-label="Liga SCC">
+            <strong>LIGA SCC</strong>
+            <span>FC26 Virtual League</span>
+          </div>
           <p class="stage-label">League control</p>
           <div class="hero-stage-headline">
             <span class="hero-stage-year">26</span>
@@ -288,13 +291,180 @@
 
             <button class="primary-btn form-btn" type="submit">Guardar jugador</button>
           </form>
+
+          <form id="matchEditorForm" class="editor-form">
+            <div class="editor-form-head">
+              <h4>Editar partido</h4>
+              <p>Cierra fechas, define marcador final y escribe el detalle de goles y asistencias.</p>
+            </div>
+
+            <label>
+              Fecha base
+              <select id="matchRoundSelect" required></select>
+            </label>
+
+            <label>
+              Ida o vuelta
+              <select id="matchLegSelect" required>
+                <option value="ida">Ida</option>
+                <option value="vuelta">Vuelta</option>
+              </select>
+            </label>
+
+            <label>
+              Partido
+              <select id="matchFixtureSelect" required></select>
+            </label>
+
+            <label>
+              Local
+              <input id="matchHomeTeamInput" type="text" readonly>
+            </label>
+
+            <label>
+              Visitante
+              <input id="matchAwayTeamInput" type="text" readonly>
+            </label>
+
+            <label>
+              Estado
+              <select id="matchStatusSelect" required>
+                <option value="pendiente">Pendiente</option>
+                <option value="final">Final</option>
+                <option value="aplazado">Aplazado</option>
+              </select>
+            </label>
+
+            <label>
+              Goles local
+              <input id="matchHomeGoalsInput" type="number" min="0" required>
+            </label>
+
+            <label>
+              Goles visitante
+              <input id="matchAwayGoalsInput" type="number" min="0" required>
+            </label>
+
+            <label class="editor-field-wide">
+              Goles
+              <textarea id="matchGoalsDetailsInput" rows="5" placeholder="Una linea por detalle. Ej: SlyInTheBlock x2&#10;Fran-kim25 x1"></textarea>
+            </label>
+
+            <label class="editor-field-wide">
+              Asistencias
+              <textarea id="matchAssistsDetailsInput" rows="5" placeholder="Una linea por detalle. Ej: DonFifa25 x1&#10;Fran-kim25 x1"></textarea>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar partido</button>
+          </form>
         </div>
 
         <div class="editor-actions">
           <button id="downloadJsonButton" class="secondary-btn" type="button">Descargar respaldo JSON</button>
           <p id="saveStatus" class="save-status">Sin cambios pendientes.</p>
         </div>
+
+        <div class="market-admin-layout">
+          <form id="marketSettingsForm" class="editor-form" data-reveal>
+            <div class="editor-form-head">
+              <h4>Control del mercado de fichajes</h4>
+              <p>Activa, desactiva o deja el mercado en automatico para abrirse cada sabado a las 00:00 hora Chile.</p>
+            </div>
+
+            <label>
+              Modo del mercado
+              <select id="marketModeSelect" required>
+                <option value="automatic">Automatico</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+
+            <label>
+              Estado manual
+              <select id="marketManualStatusSelect" required>
+                <option value="closed">Cerrado</option>
+                <option value="open">Abierto</option>
+              </select>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar mercado</button>
+          </form>
+
+          <article class="editor-form transfer-admin-card" data-reveal>
+            <div class="editor-form-head">
+              <h4>Solicitudes recibidas</h4>
+              <p id="transferRequestsCount">0 inscripciones registradas.</p>
+            </div>
+            <div class="transfer-requests-list" id="transferRequestsList"></div>
+          </article>
+        </div>
       </article>
+    </section>
+
+    <section class="section-block transfer-market-block" id="mercado-fichajes">
+      <div class="panel-heading inline-heading" data-reveal>
+        <div>
+          <p class="section-tag">Mercado de fichajes</p>
+          <h3>Inscripciones y ventana de transferencias</h3>
+        </div>
+        <p class="panel-note" id="transferMarketSummary">
+          Los administradores pueden abrir o cerrar el mercado, o dejarlo automatico cada sabado a las 00:00 hora Chile.
+        </p>
+      </div>
+
+      <div class="transfer-market-layout">
+        <article class="transfer-market-card" data-reveal>
+          <div class="panel-heading">
+            <p class="section-tag">Estado del mercado</p>
+            <h4 id="marketStatusLabel">Mercado cerrado</h4>
+          </div>
+
+          <div class="market-status-grid">
+            <div class="access-card">
+              <span class="profile-label">Modo</span>
+              <strong id="marketModeLabel">Automatico</strong>
+              <p id="marketHelpText" class="panel-copy">Cada sabado desde las 00:00 de Chile.</p>
+            </div>
+
+            <div class="access-card">
+              <span class="profile-label">Hora Chile</span>
+              <strong id="marketChileTimeLabel">--:--</strong>
+              <p class="panel-copy">Zona horaria oficial: Chile.</p>
+            </div>
+
+            <div class="access-card">
+              <span class="profile-label">Ventana oficial</span>
+              <strong id="marketWindowLabel">Sabado 00:00</strong>
+              <p class="panel-copy">Si el modo es manual, este horario no aplica hasta volver a automatico.</p>
+            </div>
+          </div>
+        </article>
+
+        <form id="transferMarketForm" class="editor-form transfer-market-form" data-reveal>
+          <div class="editor-form-head">
+            <h4>Formulario de inscripcion</h4>
+            <p>Completa estos datos para entrar al mercado cuando la ventana este abierta.</p>
+          </div>
+
+          <label>
+            ID
+            <input id="transferPlayerIdInput" type="text" placeholder="Ej: SlyInTheBlock" required>
+          </label>
+
+          <label>
+            Posicion
+            <input id="transferPositionInput" type="text" placeholder="Ej: DC, MCO, POR" required>
+          </label>
+
+          <label>
+            Numero de telefono
+            <input id="transferPhoneInput" type="tel" placeholder="Ej: +56 9 1234 5678" required>
+          </label>
+
+          <button id="transferSubmitButton" class="primary-btn form-btn" type="submit">Enviar inscripcion</button>
+          <p id="transferSubmitStatus" class="save-status">Sin solicitudes enviadas.</p>
+        </form>
+      </div>
     </section>
 
     <section class="section-block competition-block">
@@ -358,6 +528,16 @@
           </select>
         </label>
       </div>
+
+      <article class="schedule-window-card" data-reveal>
+        <div>
+          <p class="section-tag">Horario oficial</p>
+          <h4 id="scheduleWindowTitle">Rango oficial de inicio: 18:00 a 23:30</h4>
+        </div>
+        <p class="panel-note" id="scheduleWindowText">
+          Partidos habilitados entre 18:00 y 23:30 para Argentina, Chile y Uruguay.
+        </p>
+      </article>
 
       <div class="fixtures-grid" id="fixturesGrid"></div>
     </section>
@@ -467,8 +647,8 @@
     </div>
   </template>
 
-  <script src="firebase-config.js"></script>
-  <script src="league-data.js"></script>
-  <script type="module" src="app.js"></script>
+  <script src="firebase-config.js?v=20260401a"></script>
+  <script src="league-data.js?v=20260401a"></script>
+  <script type="module" src="app.js?v=20260401a"></script>
 </body>
 </html>

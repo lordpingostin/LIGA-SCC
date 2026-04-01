@@ -1,14 +1,23 @@
-﻿{
+{
     "meta":  {
                  "leagueName":  "SCC FC26 Virtual League",
                  "shortName":  "SCC",
                  "admin":  "SLYINTHEBLOCK",
                  "season":  "Season 01",
-                 "updatedAt":  "2026-03-31",
+                 "updatedAt":  "2026-04-01",
                  "region":  "Global",
                  "game":  "EA SPORTS FC 26",
                  "mode":  "Clubs Pro Virtual",
                  "format":  "Liga internacional",
+                 "scheduleWindow":  {
+                                        "start":  "18:00",
+                                        "end":  "23:30",
+                                        "zones":  [
+                                                      "Argentina",
+                                                      "Chile",
+                                                      "Uruguay"
+                                                  ]
+                                    },
                  "countries":  [
                                    "Argentina",
                                    "Chile",
@@ -16,7 +25,13 @@
                                    "Honduras",
                                    "Peru",
                                    "Uruguay"
-                               ]
+                               ],
+                 "transferMarket":  {
+                                        "mode":  "automatic",
+                                        "manualStatus":  "closed",
+                                        "timezone":  "America/Santiago",
+                                        "automaticWindowLabel":  "Sabado desde las 00:00 hora Chile"
+                                    }
              },
     "moderators":  [
                        {
@@ -310,7 +325,7 @@
                   },
                   {
                       "id":  "club-antigordas",
-                      "name":  "ANTIGÃ˜RDAS",
+                      "name":  "ANTlG0RDAS",
                       "country":  "Argentina",
                       "contact":  "+54 9 221 360-1555",
                       "stadium":  "Por definir",
