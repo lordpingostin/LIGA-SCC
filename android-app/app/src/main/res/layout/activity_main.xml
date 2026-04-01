@@ -4,11 +4,6 @@
     android:layout_height="match_parent"
     android:background="#0A0A0A">
 
-    <WebView
-        android:id="@+id/mainWebView"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
@@ -82,9 +77,32 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:text="Cargando LIGA SCC..."
+                android:text="Abriendo LIGA SCC..."
                 android:textColor="#F5F3EF"
                 android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/launchHelperText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:textColor="#D7D1C7"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/openLeagueButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="#F5F3EF"
+                android:paddingLeft="22dp"
+                android:paddingTop="12dp"
+                android:paddingRight="22dp"
+                android:paddingBottom="12dp"
+                android:text="Abrir Liga SCC"
+                android:textAllCaps="false"
+                android:textColor="#050505" />
         </LinearLayout>
     </FrameLayout>
 
