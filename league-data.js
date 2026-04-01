@@ -319,7 +319,7 @@ window.LEAGUE_DATA = {
                   },
                   {
                       "id":  "club-antigordas",
-                      "name":  "ANTIGORDAS",
+                      "name":  "ANTlG0RDAS",
                       "country":  "Argentina",
                       "contact":  "+54 9 221 360-1555",
                       "stadium":  "Por definir",
