@@ -25,7 +25,13 @@
                                    "Honduras",
                                    "Peru",
                                    "Uruguay"
-                               ]
+                               ],
+                 "transferMarket":  {
+                                        "mode":  "automatic",
+                                        "manualStatus":  "closed",
+                                        "timezone":  "America/Santiago",
+                                        "automaticWindowLabel":  "Sabado desde las 00:00 hora Chile"
+                                    }
              },
     "moderators":  [
                        {

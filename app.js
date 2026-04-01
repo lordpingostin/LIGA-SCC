@@ -1,10 +1,12 @@
 import {
+  createTransferRequest,
   getFirebaseSetup,
   initFirebase,
   isEditor,
   saveLeagueData,
   signInWithGoogle,
   signOutUser,
+  subscribeTransferRequests,
 } from "./firebase-service.js";
 
 const DATA_PATH = "league-data.json";
@@ -87,6 +89,23 @@ const matchHomeGoalsInput = document.getElementById("matchHomeGoalsInput");
 const matchAwayGoalsInput = document.getElementById("matchAwayGoalsInput");
 const matchGoalsDetailsInput = document.getElementById("matchGoalsDetailsInput");
 const matchAssistsDetailsInput = document.getElementById("matchAssistsDetailsInput");
+const marketSettingsForm = document.getElementById("marketSettingsForm");
+const marketModeSelect = document.getElementById("marketModeSelect");
+const marketManualStatusSelect = document.getElementById("marketManualStatusSelect");
+const transferRequestsCount = document.getElementById("transferRequestsCount");
+const transferRequestsList = document.getElementById("transferRequestsList");
+const transferMarketSummary = document.getElementById("transferMarketSummary");
+const marketStatusLabel = document.getElementById("marketStatusLabel");
+const marketModeLabel = document.getElementById("marketModeLabel");
+const marketChileTimeLabel = document.getElementById("marketChileTimeLabel");
+const marketWindowLabel = document.getElementById("marketWindowLabel");
+const marketHelpText = document.getElementById("marketHelpText");
+const transferMarketForm = document.getElementById("transferMarketForm");
+const transferPlayerIdInput = document.getElementById("transferPlayerIdInput");
+const transferPositionInput = document.getElementById("transferPositionInput");
+const transferPhoneInput = document.getElementById("transferPhoneInput");
+const transferSubmitButton = document.getElementById("transferSubmitButton");
+const transferSubmitStatus = document.getElementById("transferSubmitStatus");
 const downloadJsonButton = document.getElementById("downloadJsonButton");
 const saveStatus = document.getElementById("saveStatus");
 
@@ -97,12 +116,15 @@ const state = {
   players: [],
   matches: [],
   schedule: [],
+  transferRequests: [],
   user: null,
   canEdit: false,
   sourceLabel: "JSON publico",
   firebaseStatus: "disabled",
   firebaseSetup: getFirebaseSetup(),
   revealObserver: null,
+  transferRequestsUnsubscribe: null,
+  marketClock: null,
 };
 
 function deepClone(value) {
@@ -146,6 +168,87 @@ function formatDate(value) {
     month: "short",
     year: "numeric",
   }).format(parsed);
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "Pendiente";
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return String(value);
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(parsed);
+}
+
+function getTransferMarketConfig() {
+  const market = state.meta.transferMarket || {};
+  return {
+    mode: market.mode === "manual" ? "manual" : "automatic",
+    manualStatus: market.manualStatus === "open" ? "open" : "closed",
+    timezone: market.timezone || "America/Santiago",
+    automaticWindowLabel: market.automaticWindowLabel || "Sabado desde las 00:00 hora Chile",
+  };
+}
+
+function getChileNowParts() {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: getTransferMarketConfig().timezone,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+
+  const parts = Object.fromEntries(
+    formatter
+      .formatToParts(new Date())
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, part.value])
+  );
+
+  return {
+    weekday: parts.weekday || "Mon",
+    year: parts.year || "0000",
+    month: parts.month || "00",
+    day: parts.day || "00",
+    hour: parts.hour || "00",
+    minute: parts.minute || "00",
+    second: parts.second || "00",
+  };
+}
+
+function getTransferMarketState() {
+  const config = getTransferMarketConfig();
+  const chileNow = getChileNowParts();
+  const currentTime = `${chileNow.hour}:${chileNow.minute}`;
+  const automaticOpen = chileNow.weekday === "Sat";
+  const isOpen = config.mode === "manual" ? config.manualStatus === "open" : automaticOpen;
+
+  return {
+    ...config,
+    isOpen,
+    currentTime,
+    currentWeekday: chileNow.weekday,
+    statusLabel: isOpen ? "Mercado abierto" : "Mercado cerrado",
+    modeLabel: config.mode === "manual" ? "Manual" : "Automatico",
+    helpText:
+      config.mode === "manual"
+        ? `Modo manual activo. El mercado esta ${config.manualStatus === "open" ? "abierto" : "cerrado"} por decision administrativa.`
+        : "Modo automatico activo. Se habilita cada sabado a las 00:00 hora Chile y permanece abierto durante el sabado.",
+  };
 }
 
 function getScheduleWindowInfo() {
@@ -222,6 +325,12 @@ function normalizeLeagueData(data = {}) {
     mode: "Clubs Pro",
     format: "Liga internacional",
     countries: [],
+    transferMarket: {
+      mode: "automatic",
+      manualStatus: "closed",
+      timezone: "America/Santiago",
+      automaticWindowLabel: "Sabado desde las 00:00 hora Chile",
+    },
     ...(normalized.meta || {}),
     admin: FIXED_ADMIN,
   };
@@ -430,11 +539,13 @@ function renderSummary() {
 
 function renderCommandCenter() {
   const scheduleWindow = getScheduleWindowInfo();
+  const transferMarket = getTransferMarketState();
   const items = [
     { label: "Cobertura", value: `${getCountryCount()} paises listados` },
     { label: "Temporada", value: state.meta.season || "Season 01" },
     { label: "Calendario", value: `${state.schedule.length} fechas ida y ${state.schedule.length} vuelta` },
     { label: "Horario oficial", value: `${scheduleWindow.shortLabel} (${scheduleWindow.zoneLabel})` },
+    { label: "Mercado", value: `${transferMarket.statusLabel} - ${transferMarket.modeLabel}` },
     { label: "Fuente", value: state.sourceLabel },
   ];
 
@@ -477,6 +588,63 @@ function renderCommandCenter() {
     `${state.meta.leagueName || "SCC"} reune ${state.clubs.length} clubes, ${state.players.length} jugadores, ` +
     `${getScheduledMatchCount()} partidos programados, ${getCompletedMatchCount()} ya jugados y ` +
     `${state.firebaseSetup.editorEmails.length} correos listos para edicion compartida.`;
+}
+
+function renderTransferMarket() {
+  const market = getTransferMarketState();
+  const formEnabled = state.firebaseSetup.enabled && market.isOpen;
+
+  marketStatusLabel.textContent = market.statusLabel;
+  marketModeLabel.textContent = market.modeLabel;
+  marketChileTimeLabel.textContent = `${market.currentTime} (${market.currentWeekday})`;
+  marketWindowLabel.textContent = market.automaticWindowLabel;
+  marketHelpText.textContent = market.helpText;
+  transferMarketSummary.textContent =
+    "Los administradores pueden abrir o cerrar el mercado manualmente, o dejarlo automatico cada sabado a las 00:00 hora Chile.";
+
+  transferPlayerIdInput.disabled = !formEnabled;
+  transferPositionInput.disabled = !formEnabled;
+  transferPhoneInput.disabled = !formEnabled;
+  transferSubmitButton.disabled = !formEnabled;
+
+  if (!state.firebaseSetup.enabled) {
+    transferSubmitStatus.textContent = "Firebase no esta disponible para recibir inscripciones.";
+    transferSubmitStatus.className = "save-status warning";
+  } else if (market.isOpen) {
+    transferSubmitStatus.textContent = "Mercado habilitado. Puedes enviar tu inscripcion.";
+    transferSubmitStatus.className = "save-status success";
+  } else {
+    transferSubmitStatus.textContent = "Mercado cerrado por ahora. Espera la apertura o un cambio de los administradores.";
+    transferSubmitStatus.className = "save-status warning";
+  }
+}
+
+function renderTransferRequests() {
+  const count = state.transferRequests.length;
+  transferRequestsCount.textContent = `${count} inscripciones registradas.`;
+
+  if (!count) {
+    transferRequestsList.innerHTML = '<p class="panel-copy">Todavia no hay solicitudes de fichajes.</p>';
+    return;
+  }
+
+  transferRequestsList.innerHTML = state.transferRequests
+    .map(
+      (request) => `
+        <article class="transfer-request-item">
+          <div>
+            <strong>${escapeHtml(request.playerId || "Sin ID")}</strong>
+            <p>Posicion: ${escapeHtml(request.position || "Por definir")}</p>
+            <p>Telefono: ${escapeHtml(request.phone || "Sin telefono")}</p>
+          </div>
+          <div class="transfer-request-meta">
+            <span class="access-badge neutral">${escapeHtml(request.status || "Pendiente")}</span>
+            <small>${escapeHtml(formatDateTime(request.submittedAt))}</small>
+          </div>
+        </article>
+      `
+    )
+    .join("");
 }
 
 function renderStandings() {
@@ -970,6 +1138,17 @@ function populateMatchEditor() {
   fillMatchForm();
 }
 
+function fillMarketSettingsForm() {
+  const market = getTransferMarketConfig();
+  marketModeSelect.value = market.mode;
+  marketManualStatusSelect.value = market.manualStatus;
+  marketManualStatusSelect.disabled = market.mode !== "manual";
+}
+
+function syncMarketModeControls() {
+  marketManualStatusSelect.disabled = marketModeSelect.value !== "manual";
+}
+
 function populateEditorSelects() {
   const selectedClub = clubEditorSelect.value;
   const selectedPlayer = playerEditorSelect.value;
@@ -992,6 +1171,7 @@ function populateEditorSelects() {
   fillClubForm();
   fillPlayerForm();
   populateMatchEditor();
+  fillMarketSettingsForm();
 }
 
 function setSaveStatus(message, tone = "neutral") {
@@ -1022,7 +1202,7 @@ function setEditorState() {
 
   if (state.user && state.canEdit) {
     authStatus.textContent = "Editor conectado";
-    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes, jugadores y partidos desde esta web.";
+    authHelp.textContent = "Tu correo esta autorizado. Ya puedes editar clubes, jugadores, partidos y mercado de fichajes desde esta web.";
     editorBadge.textContent = "Permiso de edicion activo";
     editorBadge.className = "access-badge success";
     editorPanel.classList.remove("hidden");
@@ -1055,13 +1235,15 @@ function setEditorState() {
   }
 
   editorPanelNote.textContent =
-    "Los cambios se guardan en Firestore para que la web y la APK conectada lean resultados, goles y asistencias al abrirse.";
+    "Los cambios se guardan en Firestore para que la web y la APK conectada lean resultados, goles, asistencias y mercado al abrirse.";
 }
 
 function renderAll() {
   renderMeta();
   renderSummary();
   renderCommandCenter();
+  renderTransferMarket();
+  renderTransferRequests();
   renderStandings();
   populateFixtureFilter();
   renderFixtures();
@@ -1271,6 +1453,62 @@ async function handleMatchSubmit(event) {
   await saveCurrentLeague(`Partido ${homeClub?.name || "Local"} vs ${awayClub?.name || "Visitante"}`);
 }
 
+function setTransferSubmitStatus(message, tone = "neutral") {
+  transferSubmitStatus.textContent = message;
+  transferSubmitStatus.className = `save-status ${tone}`;
+}
+
+async function handleMarketSettingsSubmit(event) {
+  event.preventDefault();
+
+  state.meta.transferMarket = {
+    ...getTransferMarketConfig(),
+    mode: marketModeSelect.value === "manual" ? "manual" : "automatic",
+    manualStatus: marketManualStatusSelect.value === "open" ? "open" : "closed",
+    timezone: "America/Santiago",
+    automaticWindowLabel: "Sabado desde las 00:00 hora Chile",
+  };
+  state.meta.updatedAt = todayIsoLocal();
+
+  renderAll();
+  await saveCurrentLeague("Mercado de fichajes");
+}
+
+async function handleTransferRequestSubmit(event) {
+  event.preventDefault();
+
+  const market = getTransferMarketState();
+  if (!state.firebaseSetup.enabled) {
+    setTransferSubmitStatus("Firebase no esta disponible para enviar inscripciones.", "error");
+    return;
+  }
+
+  if (!market.isOpen) {
+    setTransferSubmitStatus("El mercado esta cerrado. No se pueden enviar inscripciones por ahora.", "warning");
+    return;
+  }
+
+  const playerId = transferPlayerIdInput.value.trim();
+  const position = transferPositionInput.value.trim();
+  const phone = transferPhoneInput.value.trim();
+
+  if (!playerId || !position || !phone) {
+    setTransferSubmitStatus("Completa ID, posicion y numero de telefono para enviar la inscripcion.", "warning");
+    return;
+  }
+
+  setTransferSubmitStatus("Enviando inscripcion al mercado...", "pending");
+
+  try {
+    await createTransferRequest({ playerId, position, phone });
+    transferMarketForm.reset();
+    setTransferSubmitStatus("Inscripcion enviada correctamente. Los administradores ya pueden verla.", "success");
+  } catch (error) {
+    console.error(error);
+    setTransferSubmitStatus("No se pudo enviar la inscripcion. Intenta de nuevo en unos segundos.", "error");
+  }
+}
+
 function handleDownloadJson() {
   const payload = buildLeagueDataForSave();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -1298,10 +1536,52 @@ function setupEditors() {
   matchRoundSelect.addEventListener("change", populateMatchEditor);
   matchLegSelect.addEventListener("change", populateMatchEditor);
   matchFixtureSelect.addEventListener("change", fillMatchForm);
+  marketModeSelect.addEventListener("change", syncMarketModeControls);
   clubEditorForm.addEventListener("submit", handleClubSubmit);
   playerEditorForm.addEventListener("submit", handlePlayerSubmit);
   matchEditorForm.addEventListener("submit", handleMatchSubmit);
+  marketSettingsForm.addEventListener("submit", handleMarketSettingsSubmit);
+  transferMarketForm.addEventListener("submit", handleTransferRequestSubmit);
   downloadJsonButton.addEventListener("click", handleDownloadJson);
+}
+
+function stopTransferRequestsSubscription() {
+  if (typeof state.transferRequestsUnsubscribe === "function") {
+    state.transferRequestsUnsubscribe();
+  }
+  state.transferRequestsUnsubscribe = null;
+}
+
+function startTransferRequestsSubscription() {
+  stopTransferRequestsSubscription();
+
+  if (!state.firebaseSetup.enabled || !state.canEdit) {
+    state.transferRequests = [];
+    renderTransferRequests();
+    return;
+  }
+
+  state.transferRequestsUnsubscribe = subscribeTransferRequests(
+    (items) => {
+      state.transferRequests = items;
+      renderTransferRequests();
+    },
+    (error) => {
+      console.error(error);
+      transferRequestsList.innerHTML = '<p class="panel-copy">No se pudieron cargar las solicitudes del mercado.</p>';
+    }
+  );
+}
+
+function setupMarketClock() {
+  if (state.marketClock) {
+    window.clearInterval(state.marketClock);
+  }
+
+  state.marketClock = window.setInterval(() => {
+    renderTransferMarket();
+    renderCommandCenter();
+  }, 60000);
 }
 
 function setupAuthButtons() {
@@ -1344,6 +1624,7 @@ async function setupFirebaseIntegration() {
     onUserChange: ({ user, canEdit }) => {
       state.user = user || null;
       state.canEdit = Boolean(canEdit);
+      startTransferRequestsSubscription();
       setEditorState();
     },
     onLeagueData: ({ data, sourceLabel }) => {
@@ -1362,6 +1643,7 @@ function showFatalError(error) {
   clubCards.innerHTML = emptyStateTemplate.innerHTML;
   playersTableBody.innerHTML = createEmptyRow(12);
   leaderboards.innerHTML = emptyStateTemplate.innerHTML;
+  transferRequestsList.innerHTML = emptyStateTemplate.innerHTML;
   footerUpdate.textContent = "No fue posible cargar la informacion del torneo";
   setSaveStatus("No fue posible cargar la informacion del torneo.", "error");
 }
@@ -1369,6 +1651,7 @@ function showFatalError(error) {
 async function init() {
   try {
     setupRevealObserver();
+    setupMarketClock();
     await loadBaseData();
     renderAll();
     setupFilters();

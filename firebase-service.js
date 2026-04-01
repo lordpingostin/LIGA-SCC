@@ -9,6 +9,7 @@ let serviceState = {
   db: null,
   provider: null,
   docRef: null,
+  transferRequestsRef: null,
   modules: null,
 };
 
@@ -98,6 +99,7 @@ export async function initFirebase(callbacks = {}) {
   serviceState.db = db;
   serviceState.provider = provider;
   serviceState.docRef = docRef;
+  serviceState.transferRequestsRef = firestoreModule.collection(db, "transferRequests");
   serviceState.modules = {
     ...authModule,
     ...firestoreModule,
@@ -173,4 +175,44 @@ export async function saveLeagueData(data, user) {
     },
     { merge: false }
   );
+}
+
+export function subscribeTransferRequests(onData, onError) {
+  if (!serviceState.enabled || !serviceState.transferRequestsRef || !serviceState.modules) {
+    return () => {};
+  }
+
+  const requestQuery = serviceState.modules.query(
+    serviceState.transferRequestsRef,
+    serviceState.modules.orderBy("createdAt", "desc")
+  );
+
+  return serviceState.modules.onSnapshot(
+    requestQuery,
+    (snapshot) => {
+      const items = snapshot.docs.map((docSnapshot) => ({
+        docId: docSnapshot.id,
+        ...docSnapshot.data(),
+      }));
+      onData?.(items);
+    },
+    (error) => {
+      onError?.(error);
+    }
+  );
+}
+
+export async function createTransferRequest(payload) {
+  if (!serviceState.enabled || !serviceState.transferRequestsRef || !serviceState.modules) {
+    throw new Error("Firebase no esta configurado para recibir inscripciones.");
+  }
+
+  await serviceState.modules.addDoc(serviceState.transferRequestsRef, {
+    playerId: String(payload.playerId || "").trim(),
+    position: String(payload.position || "").trim(),
+    phone: String(payload.phone || "").trim(),
+    status: "Pendiente",
+    submittedAt: new Date().toISOString(),
+    createdAt: serviceState.modules.serverTimestamp(),
+  });
 }

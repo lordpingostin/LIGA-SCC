@@ -1,13 +1,35 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /leagues/{leagueId} {
-      allow read: if true;
-      allow write: if request.auth != null
+    function isEditor() {
+      return request.auth != null
         && request.auth.token.email in [
           "assencarlos2007@gmail.com",
           "Santinotamer.7@gmail.com"
         ];
+    }
+
+    match /leagues/{leagueId} {
+      allow read: if true;
+      allow write: if isEditor();
+    }
+
+    match /transferRequests/{requestId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          "playerId",
+          "position",
+          "phone",
+          "status",
+          "submittedAt",
+          "createdAt"
+        ])
+        && request.resource.data.playerId is string
+        && request.resource.data.position is string
+        && request.resource.data.phone is string
+        && request.resource.data.status is string
+        && request.resource.data.submittedAt is string
+        && request.resource.data.createdAt is timestamp;
+      allow read, update, delete: if isEditor();
     }
   }
 }
