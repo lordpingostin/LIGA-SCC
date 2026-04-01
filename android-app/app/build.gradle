@@ -58,7 +58,7 @@ android {
 
     applicationVariants.configureEach { variant ->
         variant.outputs.configureEach { output ->
-            outputFileName = variant.buildType.name == "debug" ? "COPA-SCC.apk" : "COPA-SCC-${variant.name}.apk"
+            outputFileName = variant.buildType.name == "debug" ? "COPA-SCC.apk" : "LIGA SCC BETA.apk"
         }
     }
 
