@@ -1,4 +1,4 @@
-﻿const FIREBASE_APP_URL = "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+const FIREBASE_APP_URL = "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
 const FIREBASE_AUTH_URL = "https://www.gstatic.com/firebasejs/10.13.2/firebase-auth.js";
 const FIREBASE_STORE_URL = "https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore.js";
 

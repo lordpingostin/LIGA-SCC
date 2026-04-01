@@ -1,4 +1,4 @@
-﻿import {
+import {
   getFirebaseSetup,
   initFirebase,
   isEditor,
@@ -918,7 +918,9 @@ async function fetchRemoteData() {
     if (!response.ok) {
       return null;
     }
-    return await response.json();
+    const text = await response.text();
+    const cleanText = text.replace(/^\uFEFF/, "");
+    return JSON.parse(cleanText);
   } catch (error) {
     console.warn("No se pudieron cargar datos remotos, usando respaldo local.", error);
     return null;

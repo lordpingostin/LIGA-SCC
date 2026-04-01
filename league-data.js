@@ -1,4 +1,4 @@
-﻿window.LEAGUE_DATA = {
+window.LEAGUE_DATA = {
     "meta":  {
                  "leagueName":  "SCC FC26 Virtual League",
                  "shortName":  "SCC",
