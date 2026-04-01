@@ -155,3 +155,19 @@ Cuando cambies la web local:
 1. Ejecuta `sync-android-assets.bat`
 2. Abre `android-app` en Android Studio
 3. Compila de nuevo el APK
+
+## TWA y Chrome
+
+La app Android ya quedo preparada para abrir la web con Chrome usando Trusted Web Activity / Custom Tabs.
+
+Archivos clave:
+
+- `android-app/app/src/main/AndroidManifest.xml`
+- `android-app/app/build.gradle`
+- `.well-known/assetlinks.json`
+- `.nojekyll`
+
+Importante:
+
+- Con el hosting actual en `https://lordpingostin.github.io/LIGA-SCC/`, Chrome abrira la web como Custom Tab, porque la verificacion TWA completa necesita `/.well-known/assetlinks.json` en la raiz del dominio.
+- Para full screen real sin barra, lo ideal es mover la web a Firebase Hosting o a un dominio propio apuntando a esta carpeta.

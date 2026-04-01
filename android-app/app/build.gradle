@@ -29,10 +29,19 @@ android {
     buildFeatures {
         viewBinding true
     }
+
+    applicationVariants.configureEach { variant ->
+        variant.outputs.configureEach { output ->
+            outputFileName = variant.buildType.name == "debug" ? "COPA-SCC.apk" : "COPA-SCC-${variant.name}.apk"
+        }
+    }
 }
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'androidx.webkit:webkit:1.11.0'
+    implementation 'androidx.browser:browser:1.8.0'
     implementation 'com.google.android.material:material:1.12.0'
+    implementation('com.google.androidbrowserhelper:androidbrowserhelper:2.6.2') {
+        exclude group: 'androidx.browser', module: 'browser'
+    }
 }

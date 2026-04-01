@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -9,15 +10,39 @@
         android:label="@string/app_name"
         android:roundIcon="@drawable/liga_scc_logo"
         android:supportsRtl="true"
-        android:theme="@style/Theme.SCCLeague">
+        android:theme="@style/Theme.SCCLeague"
+        tools:ignore="GoogleAppIndexingWarning">
+
+        <meta-data
+            android:name="asset_statements"
+            android:resource="@string/asset_statements" />
+
         <activity
-            android:name=".MainActivity"
+            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
             android:exported="true"
-            android:theme="@style/Theme.SCCLeague">
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+
+            <meta-data
+                android:name="android.support.customtabs.trusted.DEFAULT_URL"
+                android:value="https://lordpingostin.github.io/LIGA-SCC/" />
+
+            <meta-data
+                android:name="android.support.customtabs.trusted.SCREEN_ORIENTATION"
+                android:value="portrait" />
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="lordpingostin.github.io"
+                    android:pathPrefix="/LIGA-SCC"
+                    android:scheme="https" />
             </intent-filter>
         </activity>
     </application>

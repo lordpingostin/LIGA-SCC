@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sccleague.app",
+      "sha256_cert_fingerprints": [
+        "B9:52:AA:E4:8D:55:00:A4:39:5F:19:DF:BB:BA:15:D4:D2:80:3A:26:E8:18:7D:9E:F2:D0:4C:BB:E9:F5:E4:0E"
+      ]
+    }
+  }
+]
