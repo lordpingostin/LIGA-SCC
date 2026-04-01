@@ -2,4 +2,6 @@ android-app/.gradle/
 android-app/build/
 android-app/app/build/
 android-app/local.properties
+android-app/keystore/
+android-app/keystore.properties
 .firebase/
