@@ -7,4 +7,9 @@
         <item name="colorPrimaryVariant">#D9D2C6</item>
         <item name="colorOnPrimary">#0A0A0A</item>
     </style>
+
+    <style name="Theme.SCCLeague.Launcher" parent="@android:style/Theme.Translucent.NoTitleBar">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
 </resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="twa_status_bar">#050505</color>
+    <color name="twa_navigation_bar">#050505</color>
+    <color name="twa_splash_background">#050505</color>
+</resources>
