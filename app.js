@@ -423,6 +423,22 @@ function normalizePlayer(player = {}) {
   };
 }
 
+function dedupePlayers(players = []) {
+  const byName = new Map();
+
+  players.forEach((player) => {
+    const key = String(player.name || "").trim().toLowerCase();
+    if (!key) {
+      return;
+    }
+
+    // Keep the most recent occurrence so stale duplicates from older payloads do not survive.
+    byName.set(key, player);
+  });
+
+  return [...byName.values()];
+}
+
 function normalizeMatch(match = {}) {
   return {
     ...match,
@@ -463,7 +479,9 @@ function normalizeLeagueData(data = {}) {
 
   normalized.moderators = Array.isArray(normalized.moderators) ? normalized.moderators : [];
   normalized.clubs = Array.isArray(normalized.clubs) ? normalized.clubs.map(normalizeClub) : [];
-  normalized.players = Array.isArray(normalized.players) ? normalized.players.map(normalizePlayer) : [];
+  normalized.players = Array.isArray(normalized.players)
+    ? dedupePlayers(normalized.players.map(normalizePlayer))
+    : [];
   normalized.matches = Array.isArray(normalized.matches) ? normalized.matches.map(normalizeMatch) : [];
 
   return normalized;
