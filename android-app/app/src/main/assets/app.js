@@ -481,7 +481,10 @@ function renderMeta() {
   brandRegion.textContent = `${region} - ${game}`;
   seasonBadge.textContent = state.meta.season || "Season 01";
 
-  heroTitle.textContent = "𝗟𝗜𝗚𝗔 𝗦𝗖𝗖 | 𝗖𝗼𝗺𝗽𝗲𝘁𝗶𝘁𝗶𝘃𝗶𝗱𝗮𝗱 𝗮𝗹 𝗺á𝘅𝗶𝗺𝗼";
+  heroTitle.innerHTML =
+    '<span class="hero-title-line hero-title-line-top">𝗟𝗜𝗚𝗔 𝗦𝗖𝗖 |</span>' +
+    '<span class="hero-title-line">𝗖𝗼𝗺𝗽𝗲𝘁𝗶𝘁𝗶𝘃𝗶𝗱𝗮𝗱</span>' +
+    '<span class="hero-title-line">𝗮𝗹 𝗺á𝘅𝗶𝗺𝗼</span>';
   heroDescription.textContent =
     `${state.meta.format || "Liga internacional"} de ${game} en ${mode} con resultados, ` +
     "estadisticas y mercado de fichajes dentro de una experiencia negra, elegante y pensada para web y app.";
