@@ -4,7 +4,7 @@ window.LEAGUE_DATA = {
                  "shortName":  "SCC",
                  "admin":  "SLYINTHEBLOCK",
                  "season":  "Season 01",
-                 "updatedAt":  "2026-04-01",
+                 "updatedAt":  "2026-04-01T11:32:34.0116657-05:00",
                  "region":  "Global",
                  "game":  "EA SPORTS FC 26",
                  "mode":  "Clubs Pro Virtual",
@@ -805,21 +805,6 @@ window.LEAGUE_DATA = {
                     {
                         "id":  "player-real-k-sport-08",
                         "name":  "Walleerr25-",
-                        "country":  "Peru",
-                        "clubId":  "club-real-k-sport",
-                        "position":  "POR DEFINIR",
-                        "overall":  0,
-                        "matches":  0,
-                        "goals":  0,
-                        "assists":  0,
-                        "mvps":  0,
-                        "cleanSheets":  0,
-                        "saves":  0,
-                        "rating":  0
-                    },
-                    {
-                        "id":  "player-real-k-sport-09",
-                        "name":  "Faze_Rusio26",
                         "country":  "Peru",
                         "clubId":  "club-real-k-sport",
                         "position":  "POR DEFINIR",
@@ -3205,21 +3190,6 @@ window.LEAGUE_DATA = {
                     {
                         "id":  "player-wolves-united-18",
                         "name":  "Tomas20107087",
-                        "country":  "Chile",
-                        "clubId":  "club-wolves-united",
-                        "position":  "POR DEFINIR",
-                        "overall":  0,
-                        "matches":  0,
-                        "goals":  0,
-                        "assists":  0,
-                        "mvps":  0,
-                        "cleanSheets":  0,
-                        "saves":  0,
-                        "rating":  0
-                    },
-                    {
-                        "id":  "player-wolves-united-19",
-                        "name":  "Wawi151098s",
                         "country":  "Chile",
                         "clubId":  "club-wolves-united",
                         "position":  "POR DEFINIR",
@@ -6083,21 +6053,6 @@ window.LEAGUE_DATA = {
                         "rating":  0
                     },
                     {
-                        "id":  "player-america-10",
-                        "name":  "Bolibomba1302nd",
-                        "country":  "Honduras",
-                        "clubId":  "club-club-america",
-                        "position":  "POR DEFINIR",
-                        "overall":  0,
-                        "matches":  0,
-                        "goals":  0,
-                        "assists":  0,
-                        "mvps":  0,
-                        "cleanSheets":  0,
-                        "saves":  0,
-                        "rating":  0
-                    },
-                    {
                         "id":  "player-america-11",
                         "name":  "Luischico2657",
                         "country":  "Honduras",
@@ -6551,4 +6506,4 @@ window.LEAGUE_DATA = {
     "matches":  [
 
                 ]
-};
+}
