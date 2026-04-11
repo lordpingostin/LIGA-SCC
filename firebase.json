@@ -41,6 +41,28 @@
         ]
       },
       {
+        "source": "manifest.json",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/manifest+json"
+          }
+        ]
+      },
+      {
+        "source": "service-worker.js",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
         "source": "league-data.json",
         "headers": [
           {
@@ -57,6 +79,32 @@
             "value": "application/json"
           }
         ]
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/noticias",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/comunidad",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/admin",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/admin/rendimiento",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/admin/plantillas",
+        "destination": "/index.html"
+      },
+      {
+        "source": "/partidos",
+        "destination": "/index.html"
       }
     ]
   }

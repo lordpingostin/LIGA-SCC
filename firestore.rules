@@ -5,7 +5,10 @@ service cloud.firestore {
       return request.auth != null
         && request.auth.token.email in [
           "assencarlos2007@gmail.com",
-          "Santinotamer.7@gmail.com"
+          "juansebastiandosmanbotina@gmail.com",
+          "santinotamer.7@gmail.com",
+          "lauri.pincha08@gmail.com",
+          "ositonepesito@gmail.com"
         ];
     }
 
@@ -14,22 +17,48 @@ service cloud.firestore {
       allow write: if isEditor();
     }
 
+    match /leagues/{leagueId}/backups/{backupId} {
+      allow read, write: if isEditor();
+    }
+
     match /transferRequests/{requestId} {
       allow create: if request.resource.data.keys().hasOnly([
           "playerId",
           "position",
           "phone",
+          "targetClubId",
+          "targetClubName",
           "status",
+          "isPublic",
           "submittedAt",
           "createdAt"
         ])
         && request.resource.data.playerId is string
         && request.resource.data.position is string
         && request.resource.data.phone is string
+        && request.resource.data.targetClubId is string
+        && request.resource.data.targetClubName is string
         && request.resource.data.status is string
+        && request.resource.data.isPublic is bool
         && request.resource.data.submittedAt is string
         && request.resource.data.createdAt is timestamp;
-      allow read, update, delete: if isEditor();
+      allow read: if true;
+      allow update, delete: if isEditor();
+    }
+
+    match /communityMessages/{messageId} {
+      allow create: if request.resource.data.keys().hasOnly([
+          "name",
+          "message",
+          "submittedAt",
+          "createdAt"
+        ])
+        && request.resource.data.name is string
+        && request.resource.data.message is string
+        && request.resource.data.submittedAt is string
+        && request.resource.data.createdAt is timestamp;
+      allow read: if true;
+      allow update, delete: if isEditor();
     }
   }
 }

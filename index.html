@@ -4,10 +4,54 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SCC FC26 Virtual League</title>
+  <meta name="theme-color" content="#050505">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LIGA SCC">
+  <meta name="mobile-web-app-capable" content="yes">
+  <script>
+    (function () {
+      const routeToView = {
+        "/noticias": "noticias",
+        "/comunidad": "comunidad",
+        "/admin": "admin",
+        "/admin/rendimiento": "admin-performance",
+        "/admin/plantillas": "admin-roster",
+        "/partidos": "partidos",
+      };
+
+      const pathName = String(window.location.pathname || "/").replace(/\/+$/, "") || "/";
+      const matchedRoute = Object.keys(routeToView).find((route) => pathName.endsWith(route));
+
+      if (!matchedRoute) {
+        return;
+      }
+
+      const prefix = pathName.slice(0, -matchedRoute.length);
+      const target = new URL(`${window.location.origin}${prefix || "/"}`);
+      const current = new URL(window.location.href);
+      target.search = current.search;
+      target.hash = current.hash;
+      target.searchParams.set("view", routeToView[matchedRoute]);
+
+      if (matchedRoute === "/admin/rendimiento" || matchedRoute === "/admin/plantillas") {
+        const club = current.searchParams.get("club");
+        if (club) {
+          target.searchParams.set("club", club);
+        }
+      }
+
+      if (`${current.pathname}${current.search}${current.hash}` !== `${target.pathname}${target.search}${target.hash}`) {
+        window.location.replace(`${target.pathname}${target.search}${target.hash}`);
+      }
+    })();
+  </script>
+  <link rel="manifest" href="./manifest.json?v=20260402s">
+  <link rel="apple-touch-icon" href="./liga-scc-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260401c">
+  <link rel="stylesheet" href="./styles.css?v=20260402s">
 </head>
 <body>
   <div class="site-background" aria-hidden="true">
@@ -18,7 +62,7 @@
 
   <header class="hero-section">
     <nav class="topbar">
-      <a class="brand-lockup" href="#inicio" aria-label="Ir al inicio de SCC">
+      <a class="brand-lockup" href="./" data-app-view="home" aria-label="Ir al inicio de SCC">
         <span class="brand-mark">
           <img src="liga-scc-logo.png" alt="Logo Liga SCC">
         </span>
@@ -28,9 +72,15 @@
         </span>
       </a>
 
+      <div class="topbar-links">
+        <a href="./?view=noticias" data-app-view="noticias" data-view-link="noticias">Noticias</a>
+        <a href="./?view=comunidad" data-app-view="comunidad" data-view-link="comunidad">Comunidad</a>
+        <a href="./?view=admin" data-app-view="admin" data-view-link="admin">Admin</a>
+      </div>
+
       <div class="topbar-actions">
         <span id="seasonBadge" class="status-chip">Season 01</span>
-        <button id="signInButton" class="secondary-btn topbar-btn" type="button">Entrar con Google</button>
+        <button id="signInButton" class="secondary-btn topbar-btn" type="button" disabled>Entrar con Google</button>
         <button id="signOutButton" class="secondary-btn topbar-btn hidden" type="button">Cerrar sesion</button>
       </div>
     </nav>
@@ -51,8 +101,10 @@
         </div>
 
         <div class="hero-actions">
-          <a class="primary-btn" href="#panel-control">Centro de control</a>
-          <a class="secondary-btn" href="#partidos">Ver calendario</a>
+          <a class="secondary-btn" href="./?view=noticias" data-app-view="noticias">Ver noticias</a>
+          <a class="secondary-btn" href="./?view=comunidad" data-app-view="comunidad">Ir a comunidad</a>
+          <a class="primary-btn" href="./?view=admin" data-app-view="admin">Centro de control</a>
+          <a class="secondary-btn" href="./?view=partidos" data-app-view="partidos">Ver calendario</a>
         </div>
       </div>
 
@@ -99,7 +151,48 @@
   <main class="app-shell">
     <section class="summary-band" id="summaryGrid" data-reveal></section>
 
-    <section class="section-block admin-block" id="panel-control">
+    <section class="section-block global-block subpage-section" id="noticias">
+      <div class="panel-heading inline-heading" data-reveal>
+        <div>
+          <p class="section-tag">NOTICIAS</p>
+          <h3>Lo ultimo del torneo SCC.</h3>
+        </div>
+        <p class="panel-note">Resumen publico de resultados, novedades y movimientos importantes del torneo.</p>
+      </div>
+      <div class="news-feed" id="newsFeed"></div>
+    </section>
+
+    <section class="section-block global-block subpage-section" id="comunidad">
+      <div class="panel-heading inline-heading" data-reveal>
+        <div>
+          <p class="section-tag">Comunidad</p>
+          <h3>Espacio abierto para jugadores, clubes y comunidad SCC.</h3>
+        </div>
+        <p class="panel-note">Aqui cualquiera puede escribir y seguir el movimiento publico de la comunidad.</p>
+      </div>
+      <form id="communityPublicForm" class="editor-form community-public-form" data-reveal>
+        <div class="editor-form-head">
+          <h4>Habla con la comunidad</h4>
+          <p>Cualquier persona puede dejar un mensaje corto para la comunidad SCC.</p>
+        </div>
+
+        <label>
+          Nombre
+          <input id="communityNameInput" type="text" placeholder="Tu nombre o ID" required>
+        </label>
+
+        <label class="editor-field-wide">
+          Mensaje
+          <textarea id="communityMessageInput" rows="4" placeholder="Escribe tu mensaje para la comunidad..." required></textarea>
+        </label>
+
+        <button class="primary-btn form-btn" type="submit">Publicar mensaje</button>
+        <p id="communityPublicStatus" class="save-status">Todavia no has enviado mensajes.</p>
+      </form>
+      <div class="community-grid" id="communityGrid"></div>
+    </section>
+
+    <section class="section-block admin-block subpage-section" id="panel-control">
       <div class="section-intro" data-reveal>
         <p class="eyebrow">Centro de control</p>
         <h2>Acceso con Google y edicion colaborativa.</h2>
@@ -232,61 +325,81 @@
 
           <form id="playerEditorForm" class="editor-form">
             <div class="editor-form-head">
-              <h4>Editar jugador</h4>
-              <p>Actualiza estadisticas individuales y atajadas de portero.</p>
+              <h4>Rendimiento por club</h4>
+              <p>Abre un apartado aparte para cargar todo el club sin mezclarlo con los otros formularios.</p>
             </div>
 
             <label>
-              Jugador
-              <select id="playerEditorSelect" required></select>
+              Club
+              <select id="playerEditorClubSelect" required></select>
             </label>
 
-            <label>
-              Posicion
-              <input id="playerPositionInput" type="text" required>
-            </label>
+            <div class="panel-copy" id="playerEditorClubSummary">
+              Selecciona un club para cargar su lista de jugadores.
+            </div>
 
-            <label>
-              OVR
-              <input id="playerOverallInput" type="number" min="0" required>
-            </label>
+            <div class="editor-form-actions">
+              <button id="openClubPerformanceEditorButton" class="primary-btn form-btn" type="button">Ir a rendimiento por club</button>
+              <button id="openRosterManagerButton" class="secondary-btn form-btn hidden" type="button">Ir a plantillas</button>
+            </div>
 
-            <label>
-              PJ
-              <input id="playerMatchesInput" type="number" min="0" required>
-            </label>
+            <div class="panel-copy">
+              Cada acceso redirige a un apartado aparte para que rendimiento y plantillas no se mezclen con el resto del panel. La gestion de nombres, IDs y altas solo aparece para el correo autorizado.
+            </div>
 
-            <label>
-              Goles
-              <input id="playerGoalsInput" type="number" min="0" required>
-            </label>
+            <div class="player-editor-legacy hidden" aria-hidden="true">
+              <label>
+                Jugador
+                <select id="playerEditorSelect" required></select>
+              </label>
 
-            <label>
-              Asistencias
-              <input id="playerAssistsInput" type="number" min="0" required>
-            </label>
+              <label>
+                Posicion
+                <input id="playerPositionInput" type="text" required>
+              </label>
 
-            <label>
-              MVP
-              <input id="playerMvpsInput" type="number" min="0" required>
-            </label>
+              <label>
+                OVR
+                <input id="playerOverallInput" type="number" min="0" required>
+              </label>
 
-            <label>
-              Porterias a cero
-              <input id="playerCleanSheetsInput" type="number" min="0" required>
-            </label>
+              <label>
+                PJ
+                <input id="playerMatchesInput" type="number" min="0" required>
+              </label>
 
-            <label>
-              Atajadas
-              <input id="playerSavesInput" type="number" min="0" required>
-            </label>
+              <label>
+                Goles
+                <input id="playerGoalsInput" type="number" min="0" required>
+              </label>
 
-            <label>
-              Nota
-              <input id="playerRatingInput" type="number" min="0" step="0.1" required>
-            </label>
+              <label>
+                Asistencias
+                <input id="playerAssistsInput" type="number" min="0" required>
+              </label>
 
-            <button class="primary-btn form-btn" type="submit">Guardar jugador</button>
+              <label>
+                MVP
+                <input id="playerMvpsInput" type="number" min="0" required>
+              </label>
+
+              <label>
+                Porterias a cero
+                <input id="playerCleanSheetsInput" type="number" min="0" required>
+              </label>
+
+              <label>
+                Atajadas
+                <input id="playerSavesInput" type="number" min="0" required>
+              </label>
+
+              <label>
+                Nota
+                <input id="playerRatingInput" type="number" min="0" step="0.1" required>
+              </label>
+
+              <button class="primary-btn form-btn" type="submit">Guardar jugador</button>
+            </div>
           </form>
 
           <form id="matchEditorForm" class="editor-form">
@@ -395,10 +508,175 @@
             <div class="transfer-requests-list" id="transferRequestsList"></div>
           </article>
         </div>
+
+        <div class="content-admin-layout">
+          <form id="newsEditorForm" class="editor-form" data-reveal>
+            <div class="editor-form-head">
+              <h4>Editar noticias</h4>
+              <p>Visible para todo el mundo. Los correos administradores autorizados pueden actualizar estos titulares desde la web.</p>
+            </div>
+
+            <label class="editor-field-wide">
+              Noticias publicas
+              <textarea id="newsEntriesInput" rows="7" placeholder="Una noticia por linea. Formato: Titulo | Texto"></textarea>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar noticias</button>
+          </form>
+
+          <form id="communityEditorForm" class="editor-form" data-reveal>
+            <div class="editor-form-head">
+              <h4>Editar comunidad</h4>
+              <p>Visible para todo el mundo. Los correos administradores autorizados pueden actualizar este espacio comunitario.</p>
+            </div>
+
+            <label class="editor-field-wide">
+              Comunidad publica
+              <textarea id="communityEntriesInput" rows="7" placeholder="Una entrada por linea. Formato: Titulo | Texto"></textarea>
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Guardar comunidad</button>
+          </form>
+        </div>
       </article>
     </section>
 
-    <section class="section-block transfer-market-block" id="mercado-fichajes">
+    <section class="section-block admin-block subpage-section workspace-route-section" id="panel-rendimiento">
+      <article class="editor-panel workspace-route-card workspace-route-card-wide" data-reveal>
+        <div class="admin-modal-head workspace-route-head">
+          <div>
+            <p class="section-tag">Rendimiento por club</p>
+            <h4>Ventana horizontal de rendimiento</h4>
+            <p class="panel-copy">Selecciona un club y carga toda la plantilla desde esta ventana separada.</p>
+          </div>
+          <div class="admin-workspace-actions">
+            <a class="secondary-btn" href="./?view=admin" data-app-view="admin">Cerrar</a>
+          </div>
+        </div>
+
+        <div class="admin-workspace-shell workspace-route-shell">
+          <div class="admin-modal-toolbar">
+            <label>
+              Club
+              <select id="clubPerformanceModalSelect" required></select>
+            </label>
+
+            <div class="panel-copy admin-modal-copy" id="clubPerformanceModalSummary">
+              Selecciona un club para cargar su plantilla completa.
+            </div>
+          </div>
+
+          <div class="table-wrap admin-modal-table-wrap">
+            <table class="admin-modal-table">
+              <thead>
+                <tr>
+                  <th>Jugador</th>
+                  <th>Posicion</th>
+                  <th>OVR</th>
+                  <th>PJ</th>
+                  <th>G</th>
+                  <th>A</th>
+                  <th>MVP</th>
+                  <th>CS</th>
+                  <th>Ataj</th>
+                  <th>Nota</th>
+                </tr>
+              </thead>
+              <tbody id="clubPerformanceTableBody"></tbody>
+            </table>
+          </div>
+
+          <div class="admin-modal-actions">
+            <p id="clubPerformanceSaveStatus" class="save-status">Sin cambios pendientes.</p>
+            <button id="saveClubPerformanceButton" class="primary-btn" type="button">Guardar plantilla completa</button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section-block admin-block subpage-section workspace-route-section" id="panel-plantillas">
+      <article class="editor-panel workspace-route-card workspace-route-card-wide" data-reveal>
+        <div class="admin-modal-head workspace-route-head">
+          <div>
+            <p class="section-tag">Plantillas</p>
+            <h4>Gestion de nombres, IDs y altas</h4>
+            <p class="panel-copy">Solo disponible para assencarlos2007@gmail.com. Aqui puedes renombrar jugadores, editar su ID y agregar nuevas fichas al club.</p>
+          </div>
+          <div class="admin-workspace-actions">
+            <a class="secondary-btn" href="./?view=admin" data-app-view="admin">Cerrar</a>
+          </div>
+        </div>
+
+        <div class="admin-workspace-shell workspace-route-shell">
+          <div class="admin-modal-toolbar">
+            <label>
+              Club
+              <select id="rosterManagerClubSelect" required></select>
+            </label>
+
+            <div class="panel-copy admin-modal-copy" id="rosterManagerSummary">
+              Selecciona un club para gestionar su plantilla.
+            </div>
+          </div>
+
+          <div class="table-wrap admin-modal-table-wrap">
+            <table class="admin-modal-table admin-roster-table">
+              <thead>
+                <tr>
+                  <th>ID de plantilla</th>
+                  <th>Nombre visible</th>
+                  <th>Posicion</th>
+                  <th>Pais</th>
+                  <th>Club</th>
+                </tr>
+              </thead>
+              <tbody id="rosterManagerTableBody"></tbody>
+            </table>
+          </div>
+
+          <form id="addPlayerForm" class="roster-add-form">
+            <div class="editor-form-head">
+              <h4>Agregar jugador al club</h4>
+              <p>Si dejas el ID vacio, se genera automaticamente a partir del nombre.</p>
+            </div>
+
+            <label>
+              ID o usuario
+              <input id="addPlayerIdInput" type="text" placeholder="Opcional">
+            </label>
+
+            <label>
+              Nombre visible
+              <input id="addPlayerNameInput" type="text" required>
+            </label>
+
+            <label>
+              Posicion
+              <input id="addPlayerPositionInput" type="text" placeholder="POR DEFINIR">
+            </label>
+
+            <label>
+              Pais
+              <input id="addPlayerCountryInput" type="text" placeholder="Global">
+            </label>
+
+            <label>
+              OVR
+              <input id="addPlayerOverallInput" type="number" min="0" placeholder="0">
+            </label>
+
+            <button class="primary-btn form-btn" type="submit">Agregar jugador</button>
+          </form>
+
+          <div class="admin-modal-actions">
+            <p id="rosterManagerSaveStatus" class="save-status">Sin cambios pendientes.</p>
+            <button id="saveRosterManagerButton" class="primary-btn" type="button">Guardar cambios de plantilla</button>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="section-block transfer-market-block subpage-section" id="mercado-fichajes">
       <div class="panel-heading inline-heading" data-reveal>
         <div>
           <p class="section-tag">Mercado de fichajes</p>
@@ -440,7 +718,7 @@
         <form id="transferMarketForm" class="editor-form transfer-market-form" data-reveal>
           <div class="editor-form-head">
             <h4>Formulario de inscripcion</h4>
-            <p>Completa estos datos para entrar al mercado cuando la ventana este abierta.</p>
+            <p>Completa estos datos para entrar al mercado cuando la ventana este abierta. Tu solicitud no sera publica hasta que un administrador la apruebe.</p>
           </div>
 
           <label>
@@ -454,6 +732,19 @@
           </label>
 
           <label>
+            Tipo de postulacion
+            <select id="transferModeSelect" required>
+              <option value="club">Postular a un club especifico</option>
+              <option value="free-agent">Publicarme como agente libre</option>
+            </select>
+          </label>
+
+          <label id="transferTargetClubField">
+            Club al que quieres postular
+            <select id="transferTargetClubSelect" required></select>
+          </label>
+
+          <label>
             Numero de telefono
             <input id="transferPhoneInput" type="tel" placeholder="Ej: +56 9 1234 5678" required>
           </label>
@@ -461,6 +752,15 @@
           <button id="transferSubmitButton" class="primary-btn form-btn" type="submit">Enviar inscripcion</button>
           <p id="transferSubmitStatus" class="save-status">Sin solicitudes enviadas.</p>
         </form>
+
+        <article class="transfer-market-card public-free-agents-card" data-reveal>
+          <div class="panel-heading">
+            <p class="section-tag">Mercado visible</p>
+            <h4>Postulaciones aprobadas por administracion</h4>
+          </div>
+          <p id="publicFreeAgentsCount" class="panel-copy">0 postulaciones publicas.</p>
+          <div class="public-free-agents-list" id="publicFreeAgentsList"></div>
+        </article>
       </div>
     </section>
 
@@ -506,7 +806,7 @@
       </div>
     </section>
 
-    <section class="section-block fixtures-block" id="partidos">
+    <section class="section-block fixtures-block subpage-section" id="partidos">
       <div class="panel-heading inline-heading" data-reveal>
         <div>
           <p class="section-tag">Partidos</p>
@@ -620,8 +920,8 @@
         </article>
 
         <article class="global-panel spotlight-panel" data-reveal>
-          <p class="section-tag">Operacion</p>
-          <h3>Un sitio liviano para publicar rapido.</h3>
+          <p class="section-tag">Panorama</p>
+          <h3>Accesos directos para seguir la liga sin saturar la portada.</h3>
           <ul class="spotlight-list" id="spotlightList"></ul>
         </article>
       </div>
@@ -645,8 +945,8 @@
     </div>
   </template>
 
-  <script src="firebase-config.js?v=20260401c"></script>
-  <script src="league-data.js?v=20260401c"></script>
-  <script type="module" src="app.js?v=20260401c"></script>
+  <script src="./firebase-config.js?v=20260411a"></script>
+<script src="./league-data.js?v=20260404n"></script>
+<script type="module" src="./app.js?v=20260411a"></script>
 </body>
 </html>
